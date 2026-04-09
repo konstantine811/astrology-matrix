@@ -1,3 +1,4 @@
+import { MATRIX_INTERPRETATIONS } from '../../data/matrixInterpretations'
 import type { MatrixData } from '../../types/matrix'
 import type { MatrixModelTableRow } from '../../utils/modelTable'
 
@@ -12,6 +13,8 @@ function cellLabel(rowIndex: number, colIndex: number): string {
 }
 
 export function MatrixCellDetails({ matrix, rows }: MatrixCellDetailsProps) {
+  const describe = (value: number) => MATRIX_INTERPRETATIONS[value]
+
   const coreEntries: Array<{ key: string; value: number; formula: string }> = [
     { key: 'A', value: matrix.A, formula: 'Ліва точка (день)' },
     { key: 'B', value: matrix.B, formula: 'Верхня точка (місяць)' },
@@ -38,6 +41,10 @@ export function MatrixCellDetails({ matrix, rows }: MatrixCellDetailsProps) {
             <p className="text-base font-bold text-cyan-100">
               {entry.key}: {entry.value}
             </p>
+            <p className="mt-1 text-xs font-medium text-white/85">{describe(entry.value)?.title ?? `Енергія ${entry.value}`}</p>
+            <p className="mt-1 text-xs leading-relaxed text-white/65">
+              {describe(entry.value)?.summary ?? 'Опис для цього значення поки не додано.'}
+            </p>
           </div>
         ))}
       </div>
@@ -46,11 +53,32 @@ export function MatrixCellDetails({ matrix, rows }: MatrixCellDetailsProps) {
       <div className="grid gap-2.5 sm:grid-cols-2">
         {rows.flatMap((row, rowIndex) =>
           row.map((cellValue, colIndex) => {
+            const bracketMatch = cellValue.match(/\((\d+)\)\s*$/)
+            const directNumberMatch = cellValue.match(/^(\d{1,2})$/)
+            const repeatedDigitMatch = cellValue.match(/^(\d)\1+$/)
+            const energy = bracketMatch
+              ? Number.parseInt(bracketMatch[1], 10)
+              : directNumberMatch
+                ? Number.parseInt(directNumberMatch[1], 10)
+                : repeatedDigitMatch
+                  ? Number.parseInt(repeatedDigitMatch[1], 10)
+                  : null
+            const meaning = energy !== null ? describe(energy) : null
+
             return (
               <div key={`${rowIndex}-${colIndex}`} className="rounded-xl border border-white/10 bg-black/20 p-2.5">
                 <p className="text-[11px] text-white/50">{cellLabel(rowIndex, colIndex)}</p>
                 <p className="mt-0.5 text-base font-bold text-white">{cellValue || '—'}</p>
-                <p className="mt-1 text-xs text-white/60">Поточне значення комірки для обраної дати.</p>
+                {energy === null ? (
+                  <p className="mt-1 text-xs text-white/60">Поточне значення комірки для обраної дати.</p>
+                ) : (
+                  <>
+                    <p className="mt-1 text-xs font-medium text-cyan-100">{meaning?.title ?? `Енергія ${energy}`}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/65">
+                      {meaning?.summary ?? 'Опис для цього значення поки не додано.'}
+                    </p>
+                  </>
+                )}
               </div>
             )
           }),
