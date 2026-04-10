@@ -34,10 +34,34 @@ export function BirthDatePicker({
   onDateSelect,
 }: BirthDatePickerProps) {
   const [pickerMonth, setPickerMonth] = useState<Date>(selectedDate);
+  const yearNumbers = years.map((y) => Number.parseInt(y, 10)).filter(Number.isFinite);
+  const minYear = Math.min(...yearNumbers);
+  const maxYear = Math.max(...yearNumbers);
 
   useEffect(() => {
     setPickerMonth(selectedDate);
   }, [selectedDate]);
+
+  const handlePickerMonthChange = (nextMonth: Date) => {
+    setPickerMonth(nextMonth);
+
+    const nextYear = nextMonth.getFullYear();
+    const nextYearIndex = years.indexOf(String(nextYear));
+    if (nextYearIndex >= 0) {
+      onYearChange(nextYearIndex);
+    }
+
+    onMonthChange(nextMonth.getMonth());
+
+    const daysInTargetMonth = new Date(
+      nextYear,
+      nextMonth.getMonth() + 1,
+      0,
+    ).getDate();
+    if (dayIndex > daysInTargetMonth - 1) {
+      onDayChange(daysInTargetMonth - 1);
+    }
+  };
 
   return (
     <div className="relative mb-4 flex w-full select-none justify-center rounded-3xl bg-black/20">
@@ -79,12 +103,15 @@ export function BirthDatePicker({
                 mode="single"
                 locale={uk}
                 selected={selectedDate}
+                captionLayout="dropdown"
+                startMonth={new Date(minYear, 0, 1)}
+                endMonth={new Date(maxYear, 11, 31)}
                 month={pickerMonth}
-                onMonthChange={setPickerMonth}
+                onMonthChange={handlePickerMonthChange}
                 onSelect={(date) => {
                   if (date) onDateSelect(date);
                 }}
-                className="text-white"
+                className="matrix-day-picker text-white"
               />
               <Popover.Arrow className="fill-[#0E1017]/95" />
             </Popover.Content>
