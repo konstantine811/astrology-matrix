@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ENERGY_LEVELS,
   ENERGY_NORM_COUNT,
@@ -46,6 +47,8 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
     x: 0,
     y: 0,
   });
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 });
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -83,8 +86,32 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
     typeof window !== "undefined" ? window.innerWidth : 1280;
   const viewportHeight =
     typeof window !== "undefined" ? window.innerHeight : 720;
-  const tooltipX = Math.min(viewportWidth, Math.max(0, tooltip.x - 800));
-  const tooltipBottom = Math.max(8, viewportHeight - tooltip.y + 220);
+
+  useLayoutEffect(() => {
+    if (!tooltip.visible || isTouchMode) return;
+
+    const el = tooltipRef.current;
+    const popupWidth = el?.offsetWidth ?? 340;
+    const popupHeight = el?.offsetHeight ?? 220;
+    const margin = 12;
+    const gap = 12;
+
+    const left = Math.min(
+      viewportWidth - popupWidth - margin,
+      Math.max(margin, tooltip.x - popupWidth / 2),
+    );
+
+    const top = Math.max(margin, tooltip.y - popupHeight - gap);
+
+    setTooltipPosition({ left, top });
+  }, [
+    isTouchMode,
+    tooltip.visible,
+    tooltip.x,
+    tooltip.y,
+    viewportWidth,
+    viewportHeight,
+  ]);
 
   const renderParsedBlock = (
     parsed: ReturnType<typeof parseMatrixCell>,
@@ -181,15 +208,18 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
   return (
     <div className="relative mb-3 w-full md:rounded-[32px] rounded-xl  border border-white/[0.03] bg-[#0A0C10] p-3 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.02)] backdrop-blur-md">
       <div className="pointer-events-none absolute inset-0 md:rounded-[32px] shadow-[0_0_60px_rgba(45,212,191,0.04)]" />
-      <div className="relative mb-2 grid grid-cols-4 gap-1.5 px-1">
-        {MATRIX_COLUMN_LABELS.map((label) => (
-          <div
-            key={label}
-            className="md:rounded-full rounded-sm border border-white/[0.03] bg-[#12141A] md:px-2 py-2 text-center md:text-[10px] text-[8px] font-semibold tracking-widest text-slate-400 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:text-[11px] text-pretty"
-          >
-            {label}
-          </div>
-        ))}
+      <div className="relative mb-2 grid grid-cols-[minmax(0,1.2fr)_minmax(0,4fr)] gap-1 px-1">
+        <div />
+        <div className="grid grid-cols-4 gap-1.5">
+          {MATRIX_COLUMN_LABELS.map((label) => (
+            <div
+              key={label}
+              className="md:rounded-full rounded-sm border border-white/[0.03] bg-[#12141A] md:px-2 py-2 text-center md:text-[10px] text-[6px] font-semibold tracking-widest text-slate-400 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:text-[11px] text-pretty"
+            >
+              {label}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="relative space-y-1.5">
@@ -294,34 +324,41 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
         ))}
       </div>
 
-      {!isTouchMode && tooltip.visible && activeParsed && (
-        <div
-          className="pointer-events-none fixed z-30 w-[min(88vw,360px)] overflow-hidden rounded-[24px] border border-teal-500/30 bg-black p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8),0_0_30px_rgba(45,212,191,0.15)] h-auto"
-          style={{
-            transform: `translate(${tooltipX}px, ${-tooltipBottom}px)`,
-          }}
-        >
-          <p className="text-[11px] tracking-wide text-teal-200/85 uppercase">
-            {activeParsed.rowLabel} • {activeParsed.columnLabel}
-            {activeParsed.timeLabel ? ` • ${activeParsed.timeLabel}` : ""}
-          </p>
-          <p className="mt-1 text-sm font-bold text-white">
-            Значення: {activeParsed.rawValue || "—"}
-          </p>
-          {renderParsedBlock(activeParsed)}
-          <span
-            aria-hidden="true"
-            className="absolute left-1/2 top-full -translate-x-1/2"
+      {!isTouchMode &&
+        tooltip.visible &&
+        activeParsed &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className="pointer-events-none fixed z-50 w-[min(88vw,360px)] overflow-hidden rounded-[24px] border border-teal-500/30 bg-black p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8),0_0_30px_rgba(45,212,191,0.15)] h-auto"
             style={{
-              width: 0,
-              height: 0,
-              borderLeft: "7px solid transparent",
-              borderRight: "7px solid transparent",
-              borderTop: "8px solid rgba(14, 16, 23, 0.85)",
+              left: tooltipPosition.left,
+              top: tooltipPosition.top,
             }}
-          />
-        </div>
-      )}
+          >
+            <p className="text-[11px] tracking-wide text-teal-200/85 uppercase">
+              {activeParsed.rowLabel} • {activeParsed.columnLabel}
+              {activeParsed.timeLabel ? ` • ${activeParsed.timeLabel}` : ""}
+            </p>
+            <p className="mt-1 text-sm font-bold text-white">
+              Значення: {activeParsed.rawValue || "—"}
+            </p>
+            {renderParsedBlock(activeParsed)}
+            <span
+              aria-hidden="true"
+              className="absolute left-1/2 top-full -translate-x-1/2"
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: "7px solid transparent",
+                borderRight: "7px solid transparent",
+                borderTop: "8px solid rgba(14, 16, 23, 0.85)",
+              }}
+            />
+          </div>,
+          document.body,
+        )}
 
       {isTouchMode && (
         <div className="mt-3 rounded-[26px] border border-teal-500/20 bg-[#0E1017]/82 p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.08)] backdrop-blur-xl">
