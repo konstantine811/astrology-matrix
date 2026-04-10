@@ -15,66 +15,86 @@ function normalizeIndex(index: number, length: number): number {
 
 export function ScrollColumn({ items, selectedIndex, onChange, wrapAround = false }: ScrollColumnProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
-  const scrollTimeoutRef = useRef<number | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const syncingRef = useRef(false)
+  const lastNotifiedIndexRef = useRef(selectedIndex)
   const renderedItems = wrapAround ? [...items, ...items, ...items] : [...items]
   const itemsLength = items.length
 
   useEffect(() => {
-    if (!scrollRef.current) {
+    const node = scrollRef.current
+    if (!node) {
       return
     }
 
     const baseIndex = wrapAround ? itemsLength + selectedIndex : selectedIndex
-    scrollRef.current.scrollTop = baseIndex * ITEM_HEIGHT
+    const targetTop = baseIndex * ITEM_HEIGHT
+
+    if (Math.abs(node.scrollTop - targetTop) < 1) {
+      lastNotifiedIndexRef.current = selectedIndex
+      return
+    }
+
+    syncingRef.current = true
+    node.scrollTop = targetTop
+    requestAnimationFrame(() => {
+      syncingRef.current = false
+    })
+    lastNotifiedIndexRef.current = selectedIndex
   }, [itemsLength, selectedIndex, wrapAround])
 
   useEffect(() => {
     return () => {
-      if (scrollTimeoutRef.current) {
-        window.clearTimeout(scrollTimeoutRef.current)
+      if (rafRef.current) {
+        window.cancelAnimationFrame(rafRef.current)
       }
     }
   }, [])
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
-    if (itemsLength === 0) {
+    if (itemsLength === 0 || syncingRef.current) {
       return
     }
 
-    if (scrollTimeoutRef.current) {
-      window.clearTimeout(scrollTimeoutRef.current)
+    const node = event.currentTarget
+    if (rafRef.current) {
+      return
     }
 
-    const rawIndex = Math.round(event.currentTarget.scrollTop / ITEM_HEIGHT)
-    const nextIndex = wrapAround ? normalizeIndex(rawIndex, itemsLength) : Math.max(0, Math.min(rawIndex, itemsLength - 1))
-
-    if (nextIndex !== selectedIndex) {
-      onChange(nextIndex)
-    }
-
-    scrollTimeoutRef.current = window.setTimeout(() => {
-      if (!scrollRef.current) {
-        return
-      }
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null
 
       if (wrapAround) {
-        const middleRawIndex = itemsLength + nextIndex
-        scrollRef.current.scrollTop = middleRawIndex * ITEM_HEIGHT
-        return
+        const cycleHeight = itemsLength * ITEM_HEIGHT
+        const topBoundary = cycleHeight * 0.5
+        const bottomBoundary = cycleHeight * 2.5
+
+        if (node.scrollTop < topBoundary || node.scrollTop > bottomBoundary) {
+          syncingRef.current = true
+          node.scrollTop = normalizeIndex(Math.round(node.scrollTop / ITEM_HEIGHT), itemsLength) * ITEM_HEIGHT + cycleHeight
+          requestAnimationFrame(() => {
+            syncingRef.current = false
+          })
+        }
       }
 
-      scrollRef.current.scrollTo({
-        top: nextIndex * ITEM_HEIGHT,
-        behavior: 'smooth',
-      })
-    }, 150)
+      const rawIndex = Math.round(node.scrollTop / ITEM_HEIGHT)
+      const nextIndex = wrapAround
+        ? normalizeIndex(rawIndex, itemsLength)
+        : Math.max(0, Math.min(rawIndex, itemsLength - 1))
+
+      if (nextIndex !== lastNotifiedIndexRef.current) {
+        lastNotifiedIndexRef.current = nextIndex
+        onChange(nextIndex)
+      }
+    })
   }
 
   return (
     <div
       ref={scrollRef}
       onScroll={handleScroll}
-      className="no-scrollbar relative flex h-[144px] w-20 snap-y snap-mandatory flex-col overflow-y-auto"
+      className="no-scrollbar relative flex h-[144px] w-20 snap-y snap-mandatory flex-col overflow-y-auto overscroll-contain touch-pan-y"
       role="listbox"
       aria-label="Date picker column"
     >
