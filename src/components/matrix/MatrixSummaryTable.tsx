@@ -221,6 +221,36 @@ const CELL_ACCENT_LINES: Record<string, string[]> = {
   "3-2": ["#312e81"],
 };
 
+const PLANET_SYMBOLS: Record<string, string> = {
+  Сонце: "☉",
+  Місяць: "☽",
+  Марс: "♂",
+  Уран: "♅",
+  Юпітер: "♃",
+  Нептун: "♆",
+  Меркурій: "☿",
+  Сатурн: "♄",
+  Венера: "♀",
+  Плутон: "♇",
+  Прозерпіна: "⚳",
+  Вулкан: "🜂",
+};
+
+const PLANET_COLORS: Record<string, string> = {
+  Сонце: "#f97316",
+  Місяць: "#60a5fa",
+  Меркурій: "#d946ef",
+  Венера: "#fde047",
+  Марс: "#ef4444",
+  Юпітер: "#fb7185",
+  Сатурн: "#f59e0b",
+  Уран: "#22d3ee",
+  Нептун: "#8b5cf6",
+  Плутон: "#ec4899",
+  Прозерпіна: "#a78bfa",
+  Вулкан: "#f97316",
+};
+
 function getEnergyByCellPosition(
   rowIndex: number,
   colIndex: number,
@@ -351,6 +381,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   const renderParsedBlock = (
     parsed: ReturnType<typeof parseMatrixCell>,
     className = "mt-2 rounded-[16px] border border-white/[0.06] bg-[#13151C]/95 p-2.5",
+    compact = false,
   ) => {
     const fallbackEnergy = getEnergyByCellPosition(
       parsed.rowIndex,
@@ -383,6 +414,14 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           : status === "above"
             ? "Вище норми"
             : "Немає числа";
+    const statusClass =
+      status === "normal"
+        ? "text-emerald-300"
+        : status === "above"
+          ? "text-rose-300"
+          : status === "below"
+            ? "text-amber-300"
+            : "text-slate-300";
     const statusText =
       status === "normal"
         ? "Якість проявляється природно і стабільно."
@@ -410,6 +449,23 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           ? (profile?.balanceAbove ??
             "Баланс прояву, м'якість у взаємодії, екологічне використання сили цієї енергії.")
           : "Підтримувати поточний баланс і стабільне застосування якості.";
+    const size = compact
+      ? {
+          imageHint: "text-xs",
+          title: "text-sm",
+          body: "text-xs",
+          stat: "text-xs",
+          status: "text-sm",
+          footer: "text-xs",
+        }
+      : {
+          imageHint: "text-sm",
+          title: "text-lg",
+          body: "text-base",
+          stat: "text-base",
+          status: "text-lg",
+          footer: "text-base",
+        };
 
     if (parsed.colIndex === 3 && parsed.rowIndex === 0) {
       return null;
@@ -445,50 +501,75 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     return (
       <div
         className={className}
-        style={{
-          borderColor: cardTheme.border,
-          boxShadow: `inset 0 1px 0 0 ${cardTheme.inset}, 0 0 0 1px ${cardTheme.border}, 0 12px 24px -18px rgba(0,0,0,0.85), 0 0 22px -18px ${cardTheme.glow}`,
-          background: `linear-gradient(180deg, ${cardTheme.from}, ${cardTheme.to})`,
-        }}
+        style={(() => {
+          const isNeutralTheme = cardTheme.border.includes("255,255,255");
+          const accentGlow = isNeutralTheme
+            ? "rgba(255,255,255,0.08)"
+            : cardTheme.glow;
+
+          return {
+            borderColor: cardTheme.border,
+            boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.03), 0 0 0 1px ${cardTheme.border}, 0 12px 24px -18px rgba(0,0,0,0.85), 0 0 24px -16px ${accentGlow}`,
+            background:
+              "linear-gradient(180deg, rgba(17,21,31,0.95), rgba(10,12,18,0.98))",
+          };
+        })()}
       >
         {parsed.colIndex === 3 && (
-          <p className="text-xs text-cyan-100/90">
+          <p className={`${size.imageHint} text-cyan-100/90`}>
             4-й стовпчик: це імідж і резонансне враження про тебе, як тебе
             бачать інші люди.
           </p>
         )}
-        <p className="text-xs font-semibold text-cyan-100">
+        <p className={`${size.title} font-semibold text-cyan-100`}>
           Енергія {effectiveEnergy}
-          {profile ? ` • ${profile.name} (${profile.planet})` : ""}
+          {profile && (
+            <>
+              {" • "}
+              {profile.name}
+              {" ("}
+              <span
+                className="mx-1 inline-block text-[1.05em] leading-none"
+                style={{
+                  color: PLANET_COLORS[profile.planet] ?? "#e2e8f0",
+                  filter: `drop-shadow(0 0 4px ${PLANET_COLORS[profile.planet] ?? "#94a3b8"}66)`,
+                }}
+              >
+                {PLANET_SYMBOLS[profile.planet] ?? "✶"}
+              </span>
+              {profile.planet}
+              {")"}
+            </>
+          )}
         </p>
         {profile?.base && (
-          <p className="mt-1 text-xs text-white/80">{profile.base}</p>
+          <p className={`mt-1 ${size.body} text-white/85`}>{profile.base}</p>
         )}
         {parsed.colIndex === 3 && profile?.base && (
-          <p className="mt-1 text-xs text-white/85">
+          <p className={`mt-1 ${size.body} text-white/90`}>
             Люди частіше зчитують вас як: {profile.base.toLowerCase()}
           </p>
         )}
-        <p className="mt-1 text-xs text-white/85">
+        <p className={`mt-1 ${size.stat} text-white/90`}>
           Норма: {count ?? "—"} • Факт: {parsed.mainCount}
           {parsed.bracketCount > 0 ? ` (+${parsed.bracketCount} у дужках)` : ""}
         </p>
-        <p className="mt-1 text-xs font-medium text-cyan-50">
-          Статус: {statusLabel}
+        <p className={`mt-1 ${size.status} font-medium text-cyan-50`}>
+          Статус: <span className={statusClass}>{statusLabel}</span>
         </p>
         {statusText && (
-          <p className="mt-1 text-xs text-white/80">{statusText}</p>
+          <p className={`mt-1 ${size.body} text-white/85`}>{statusText}</p>
         )}
         {currentLevel && (
-          <p className="mt-1 text-xs text-white/75">{currentLevel}</p>
+          <p className={`mt-1 ${size.body} text-white/80`}>{currentLevel}</p>
         )}
         {parsed.bracketCount > 0 && (
-          <p className="mt-1 text-xs text-white/70">
+          <p className={`mt-1 ${size.body} text-white/80`}>
             Значення в дужках показує прихований/нестійкий потенціал, що
             потребує пропрацювання.
           </p>
         )}
-        <p className="mt-1 text-xs font-medium text-cyan-100/90">
+        <p className={`mt-1 ${size.footer} font-medium text-emerald-300`}>
           {isImageColumn ? workOnText : `Що пропрацьовувати: ${workOnText}`}
         </p>
       </div>
@@ -633,7 +714,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
             <p className="mt-1 text-sm font-bold text-white">
               Значення: {activeParsed.rawValue || "—"}
             </p>
-            {renderParsedBlock(activeParsed)}
+            {renderParsedBlock(activeParsed, undefined, true)}
             <span
               aria-hidden="true"
               className="absolute left-1/2 top-full -translate-x-1/2"
@@ -650,7 +731,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
         )}
 
       <div className="mt-3 rounded-[26px] border border-teal-500/20 bg-[#0E1017]/82 p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.08)] backdrop-blur-xl">
-        <p className="text-[11px] tracking-widest text-teal-200/80 uppercase">
+        <p className="text-[13px] tracking-widest text-teal-200/80 uppercase">
           Розбір усіх комірок
         </p>
         <div className="mt-3 space-y-2.5">
@@ -680,11 +761,11 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(0,0,0,0.75), 0 0 24px -18px ${theme.glow}`,
                   }}
                 >
-                  <p className="text-[13px] font-semibold leading-snug text-slate-100/95">
+                  <p className="text-[16px] font-semibold leading-snug text-slate-100/95">
                     {parsed.rowLabel} • {parsed.columnLabel}
                     {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
                   </p>
-                  <p className="mt-1.5 text-base font-bold text-white">
+                  <p className="mt-1.5 text-[19px] font-bold text-white">
                     Значення: {parsed.rawValue || "—"}
                   </p>
                   {renderParsedBlock(
