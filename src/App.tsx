@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Particles } from "./components/background/Particles";
 import { BirthDatePicker } from "./components/date-picker/BirthDatePicker";
-import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
+// import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
 import { MatrixSummaryTable } from "./components/matrix/MatrixSummaryTable";
 import {
   DEFAULT_BIRTH_YEAR,
@@ -10,7 +10,7 @@ import {
   createYearOptions,
 } from "./constants/date";
 import { buildMatrixModelTable } from "./utils/modelTable";
-import { calculateDestinyMatrix } from "./utils/matrix";
+// import { calculateDestinyMatrix } from "./utils/matrix";
 
 function App() {
   const years = useMemo(() => createYearOptions(100), []);
@@ -37,13 +37,13 @@ function App() {
     }
   }, [dayIndex, days.length]);
 
-  const matrixData = useMemo(() => {
-    return calculateDestinyMatrix({
-      day: selectedDay,
-      month: monthIndex + 1,
-      year: selectedYear,
-    });
-  }, [monthIndex, selectedDay, selectedYear]);
+  // const matrixData = useMemo(() => {
+  //   return calculateDestinyMatrix({
+  //     day: selectedDay,
+  //     month: monthIndex + 1,
+  //     year: selectedYear,
+  //   });
+  // }, [monthIndex, selectedDay, selectedYear]);
 
   const modelTable = useMemo(
     () =>
