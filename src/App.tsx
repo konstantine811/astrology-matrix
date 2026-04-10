@@ -23,7 +23,7 @@ function App() {
   const [monthIndex, setMonthIndex] = useState(0);
   const [yearIndex, setYearIndex] = useState(defaultYearIndex);
   const [dayIndex, setDayIndex] = useState(0);
-  const [showDetails, setShowDetails] = useState(false);
+  // const [showDetails, setShowDetails] = useState(false);
 
   const selectedYear = Number.parseInt(years[yearIndex], 10);
   const days = useMemo(
@@ -57,48 +57,43 @@ function App() {
   );
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-5 text-white sm:py-6">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-2 text-white sm:py-6">
       <Particles />
 
-      <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
-        <h1 className="mb-3 bg-gradient-to-b from-white to-white/75 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
+      <div className="relative z-10 flex w-full flex-col items-center">
+        <h1 className="mb-3 bg-linear-to-b from-white to-white/75 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
           Матриця Долі
         </h1>
 
-        <div className="mb-4 w-full">
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <span className="text-indigo-300">✧</span>
-            <span className="text-xs font-medium tracking-widest text-indigo-200/80 uppercase">
-              Візуальна Матриця
-            </span>
+        <div className="max-w-lg w-full backdrop-blur-[1px]">
+          <div className="mb-4 w-full">
+            <div className="mb-3 flex items-center justify-center gap-2">
+              <span className="text-indigo-300">✧</span>
+              <span className="text-xs font-medium tracking-widest text-indigo-200/80 uppercase">
+                Візуальна Матриця
+              </span>
+            </div>
+
+            <MatrixDiagram matrix={matrixData} />
+
+            <BirthDatePicker
+              months={MONTHS_UA}
+              days={days}
+              years={years}
+              monthIndex={monthIndex}
+              dayIndex={dayIndex}
+              yearIndex={yearIndex}
+              onMonthChange={setMonthIndex}
+              onDayChange={setDayIndex}
+              onYearChange={setYearIndex}
+            />
+            <MatrixSummaryTable rows={modelTable.rows} />
           </div>
-
-          <MatrixDiagram matrix={matrixData} />
-
-          <BirthDatePicker
-            months={MONTHS_UA}
-            days={days}
-            years={years}
-            monthIndex={monthIndex}
-            dayIndex={dayIndex}
-            yearIndex={yearIndex}
-            onMonthChange={setMonthIndex}
-            onDayChange={setDayIndex}
-            onYearChange={setYearIndex}
-          />
-          <MatrixSummaryTable rows={modelTable.rows} />
         </div>
 
-        <button
-          onClick={() => setShowDetails((current) => !current)}
-          className="w-full rounded-2xl bg-gradient-to-r from-[#6C72FF] to-[#8C52FF] py-3.5 text-sm font-semibold tracking-wider text-white uppercase shadow-[0_0_20px_rgba(108,114,255,0.3)] transition-all duration-300 hover:from-[#5a60eb] hover:to-[#7842e6] hover:shadow-[0_0_30px_rgba(108,114,255,0.5)] focus:ring-2 focus:ring-[#6C72FF] focus:ring-offset-2 focus:ring-offset-[#030712] focus:outline-none active:scale-[0.98] sm:text-base"
-        >
-          {showDetails ? "Сховати Деталі" : "Дізнатись Більше"}
-        </button>
-
-        {showDetails ? (
+        <div className="max-w-7xl w-full backdrop-blur-[1px]">
           <MatrixCellDetails matrix={matrixData} rows={modelTable.rows} />
-        ) : null}
+        </div>
       </div>
     </div>
   );

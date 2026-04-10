@@ -25,7 +25,7 @@ export function BirthDatePicker({
 }: BirthDatePickerProps) {
   return (
     <div className="relative mb-4 flex w-full select-none justify-center rounded-3xl bg-black/20">
-      <div className="pointer-events-none absolute top-1/2 left-4 right-4 h-12 -translate-y-6 rounded-xl border border-white/10 bg-white/[0.04]" />
+      <div className="pointer-events-none absolute top-1/2 left-4 right-4 h-12 -translate-y-6 rounded-xl border border-white/10 bg-white/4" />
 
       <div className="relative z-10 flex w-full max-w-[260px] justify-between">
         <ScrollColumn
