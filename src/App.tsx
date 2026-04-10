@@ -61,7 +61,8 @@ function App() {
 
       <div className="relative z-10 flex w-full flex-col items-center">
         <h1 className="mb-3 bg-linear-to-b from-white to-white/75 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
-          Матриця Долі
+          <span className="font-bold text-indigo-300">MetaSense</span> - Твоє
+          призначення
         </h1>
 
         <div className="w-full backdrop-blur-[1px]">
@@ -69,13 +70,13 @@ function App() {
             <div className="mb-3 flex items-center justify-center gap-2">
               <span className="text-indigo-300">✧</span>
               <span className="text-xs font-medium tracking-widest text-indigo-200/80 uppercase">
-                Візуальна Матриця
+                Універсальна Матриця
               </span>
             </div>
 
-            <div className="max-w-3xl w-full">
+            {/* <div className="max-w-3xl w-full">
               <MatrixDiagram matrix={matrixData} />
-            </div>
+            </div> */}
 
             <div className="max-w-sm w-full flex justify-center items-center">
               <BirthDatePicker

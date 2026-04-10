@@ -153,7 +153,7 @@ function formatSigma(mainValue: number | null, bracketValue: number | null): str
   }
 
   if (mainValue === null && bracketValue !== null) {
-    return `(${bracketValue})`
+    return `-(${bracketValue})`
   }
 
   if (mainValue !== null && bracketValue === null) {
