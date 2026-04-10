@@ -26,15 +26,141 @@ type MatrixSummaryTableProps = {
 };
 
 const cellBaseClass =
-  "relative flex min-h-11 items-center justify-center rounded-[18px] border border-white/[0.04] bg-[#13151C] px-2 text-center text-sm font-semibold text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_10px_22px_-12px_rgba(0,0,0,0.8)] backdrop-blur-sm transition-all duration-300 sm:min-h-12 sm:text-base";
+  "relative flex min-h-11 items-center justify-center rounded-[18px] border px-2 text-center text-sm font-semibold text-slate-100 backdrop-blur-sm transition-all duration-300 sm:min-h-12 sm:text-base";
 
-const cellToneClasses = {
-  neutral: "bg-[#13151C] text-slate-300",
-  left: "bg-[#151821] text-slate-200",
-  middle: "bg-[#161A23] text-slate-200",
-  right: "bg-[#181B25] text-slate-100",
-  metric: "bg-[#1C202B] text-teal-200",
-} as const;
+type CellTheme = {
+  bg: string;
+  border: string;
+  glow: string;
+  textClass: string;
+};
+
+const ENERGY_CELL_THEME: Record<number, CellTheme> = {
+  0: {
+    bg: "rgba(42,50,72,0.22)",
+    border: "rgba(167,139,250,0.08)",
+    glow: "rgba(167,139,250,0.22)",
+    textClass: "text-slate-100",
+  },
+  1: {
+    bg: "rgba(24,125,40,0.10)",
+    border: "rgba(52,211,153,0.12)",
+    glow: "rgba(34,197,94,0.24)",
+    textClass: "text-emerald-50",
+  },
+  2: {
+    bg: "rgba(168,85,247,0.12)",
+    border: "rgba(244,114,182,0.14)",
+    glow: "rgba(236,72,153,0.25)",
+    textClass: "text-fuchsia-50",
+  },
+  3: {
+    bg: "rgba(202,194,60,0.12)",
+    border: "rgba(250,204,21,0.06)",
+    glow: "rgba(250,204,21,0.22)",
+    textClass: "text-yellow-50",
+  },
+  4: {
+    bg: "rgba(206,79,203,0.12)",
+    border: "rgba(244,114,182,0.04)",
+    glow: "rgba(236,72,153,0.22)",
+    textClass: "text-pink-50",
+  },
+  5: {
+    bg: "rgba(21,128,61,0.12)",
+    border: "rgba(74,222,128,0.04)",
+    glow: "rgba(34,197,94,0.24)",
+    textClass: "text-emerald-50",
+  },
+  6: {
+    bg: "rgba(181,171,42,0.15)",
+    border: "rgba(253,224,71,0.04)",
+    glow: "rgba(250,204,21,0.22)",
+    textClass: "text-yellow-50",
+  },
+  7: {
+    bg: "rgba(194,70,199,0.12)",
+    border: "rgba(232,121,249,0.04)",
+    glow: "rgba(217,70,239,0.24)",
+    textClass: "text-fuchsia-50",
+  },
+  8: {
+    bg: "rgba(24,125,221,0.14)",
+    border: "rgba(56,189,248,0.05)",
+    glow: "rgba(14,165,233,0.25)",
+    textClass: "text-sky-50",
+  },
+  9: {
+    bg: "rgba(28,42,176,0.18)",
+    border: "rgba(99,102,241,0.05)",
+    glow: "rgba(79,70,229,0.24)",
+    textClass: "text-indigo-50",
+  },
+  10: {
+    bg: "rgba(235,28,144,0.12)",
+    border: "rgba(244,114,182,0.06)",
+    glow: "rgba(236,72,153,0.24)",
+    textClass: "text-pink-50",
+  },
+  11: {
+    bg: "rgba(199,21,133,0.13)",
+    border: "rgba(244,114,182,0.05)",
+    glow: "rgba(217,70,239,0.24)",
+    textClass: "text-fuchsia-50",
+  },
+  12: {
+    bg: "rgba(120,25,150,0.15)",
+    border: "rgba(192,132,252,0.06)",
+    glow: "rgba(168,85,247,0.25)",
+    textClass: "text-purple-50",
+  },
+};
+
+const DEFAULT_THEME: CellTheme = {
+  bg: "rgba(19,21,28,0.95)",
+  border: "rgba(255,255,255,0.08)",
+  glow: "rgba(45,212,191,0.10)",
+  textClass: "text-slate-200",
+};
+
+function getEnergyByCellPosition(
+  rowIndex: number,
+  colIndex: number,
+): number | null {
+  if (colIndex === 3) return null;
+  if (rowIndex < 1 || rowIndex > 4) return null;
+  return (rowIndex - 1) * 3 + colIndex + 1;
+}
+
+function getCellTheme(
+  rowIndex: number,
+  colIndex: number,
+  energy: number | null,
+): CellTheme {
+  if (rowIndex === 0 && colIndex === 3) {
+    return {
+      bg: "rgba(28,32,43,0.95)",
+      border: "rgba(94,234,212,0.20)",
+      glow: "rgba(45,212,191,0.14)",
+      textClass: "text-teal-100",
+    };
+  }
+
+  if (energy !== null && ENERGY_CELL_THEME[energy]) {
+    return ENERGY_CELL_THEME[energy];
+  }
+
+  if (colIndex === 3) {
+    return {
+      bg: "rgba(28,32,43,0.90)",
+      border: "rgba(94,234,212,0.22)",
+      glow: "rgba(45,212,191,0.14)",
+      textClass: "text-teal-100",
+    };
+  }
+
+  return DEFAULT_THEME;
+}
 
 export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   rows,
@@ -90,6 +216,29 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
       ),
     [rows],
   );
+  const parsedCellsForList = useMemo(
+    () =>
+      parsedCells.filter(
+        (parsed) => !(parsed.rowIndex === 0 && parsed.colIndex === 3),
+      ),
+    [parsedCells],
+  );
+  const activeTheme = useMemo(() => {
+    if (!activeParsed) return DEFAULT_THEME;
+    const fallbackEnergy = getEnergyByCellPosition(
+      activeParsed.rowIndex,
+      activeParsed.colIndex,
+    );
+    const effectiveEnergy =
+      activeParsed.energy !== null && activeParsed.energy !== undefined
+        ? activeParsed.energy
+        : fallbackEnergy;
+    return getCellTheme(
+      activeParsed.rowIndex,
+      activeParsed.colIndex,
+      effectiveEnergy,
+    );
+  }, [activeParsed]);
 
   const viewportWidth =
     typeof window !== "undefined" ? window.innerWidth : 1280;
@@ -126,13 +275,26 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     parsed: ReturnType<typeof parseMatrixCell>,
     className = "mt-2 rounded-[16px] border border-white/[0.06] bg-[#13151C]/95 p-2.5",
   ) => {
-    const profile =
+    const fallbackEnergy = getEnergyByCellPosition(
+      parsed.rowIndex,
+      parsed.colIndex,
+    );
+    const effectiveEnergy =
       parsed.energy !== null && parsed.energy !== undefined
-        ? ENERGY_PROFILES[parsed.energy]
+        ? parsed.energy
+        : fallbackEnergy;
+    const cardTheme = getCellTheme(
+      parsed.rowIndex,
+      parsed.colIndex,
+      effectiveEnergy,
+    );
+    const profile =
+      effectiveEnergy !== null && effectiveEnergy !== undefined
+        ? ENERGY_PROFILES[effectiveEnergy]
         : undefined;
     const count =
-      parsed.energy !== null && parsed.energy !== undefined
-        ? ENERGY_NORM_COUNT[parsed.energy]
+      effectiveEnergy !== null && effectiveEnergy !== undefined
+        ? ENERGY_NORM_COUNT[effectiveEnergy]
         : undefined;
     const status =
       count !== undefined ? getNormStatus(parsed.mainCount, count) : null;
@@ -156,23 +318,27 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
       parsed.mainCount > 0
         ? (ENERGY_LEVELS[Math.min(7, parsed.mainCount)] ?? null)
         : null;
+    const isImageColumn = parsed.colIndex === 3;
+    const workOnText = isImageColumn
+      ? (profile?.imageClarity ??
+        (status === "below" || status === "absent"
+          ? "Частіше явно проговорюйте свої наміри і пояснюйте мотивацію вчинків."
+          : status === "above"
+            ? "Дозуйте прояв, говоріть простіше і перевіряйте, як вас почули."
+            : "Зберігайте цей стиль прояву й підкріплюйте його конкретними діями."))
+      : status === "below" || status === "absent"
+        ? (profile?.practiceBelow ??
+          "Посилювати цю енергію через регулярні практичні дії у темі комірки (рядок + стовпець).")
+        : status === "above"
+          ? (profile?.balanceAbove ??
+            "Баланс прояву, м'якість у взаємодії, екологічне використання сили цієї енергії.")
+          : "Підтримувати поточний баланс і стабільне застосування якості.";
 
-    if (parsed.colIndex === 3) {
-      return (
-        <div className={className}>
-          <p className="text-xs text-white/80">
-            `Σ` у 4-му стовпці: підсумкова резонансна енергія рядка (як це
-            бачать інші).
-          </p>
-          <p className="mt-1 text-xs text-white/70">
-            Число без дужок — явний прояв, у дужках — другий/прихований шар
-            сприйняття.
-          </p>
-        </div>
-      );
+    if (parsed.colIndex === 3 && parsed.rowIndex === 0) {
+      return null;
     }
 
-    if (parsed.energy === null) {
+    if (effectiveEnergy === null) {
       return (
         <div className={className}>
           <p className="text-xs text-white/75">
@@ -183,13 +349,31 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     }
 
     return (
-      <div className={className}>
+      <div
+        className={className}
+        style={{
+          borderColor: cardTheme.border,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${cardTheme.border}, 0 12px 28px -18px rgba(0,0,0,0.85), 0 0 26px -18px ${cardTheme.glow}`,
+          background: `linear-gradient(180deg, ${cardTheme.bg}, rgba(10,12,18,0.92))`,
+        }}
+      >
+        {parsed.colIndex === 3 && (
+          <p className="text-xs text-cyan-100/90">
+            4-й стовпчик: це імідж і резонансне враження про тебе, як тебе
+            бачать інші люди.
+          </p>
+        )}
         <p className="text-xs font-semibold text-cyan-100">
-          Енергія {parsed.energy}
+          Енергія {effectiveEnergy}
           {profile ? ` • ${profile.name} (${profile.planet})` : ""}
         </p>
         {profile?.base && (
           <p className="mt-1 text-xs text-white/80">{profile.base}</p>
+        )}
+        {parsed.colIndex === 3 && profile?.base && (
+          <p className="mt-1 text-xs text-white/85">
+            Люди частіше зчитують вас як: {profile.base.toLowerCase()}
+          </p>
         )}
         <p className="mt-1 text-xs text-white/85">
           Норма: {count ?? "—"} • Факт: {parsed.mainCount}
@@ -210,6 +394,9 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
             потребує пропрацювання.
           </p>
         )}
+        <p className="mt-1 text-xs font-medium text-cyan-100/90">
+          {isImageColumn ? workOnText : `Що пропрацьовувати: ${workOnText}`}
+        </p>
       </div>
     );
   };
@@ -250,60 +437,50 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
 
             <div className="grid grid-cols-4 gap-1.5">
               {row.map((cell, colIndex) => {
-                const toneClass = (() => {
-                  if (rowIndex === 0) {
-                    return colIndex === 3
-                      ? cellToneClasses.metric
-                      : cellToneClasses.neutral;
-                  }
-
-                  if (rowIndex === 1) {
-                    if (colIndex === 0) return cellToneClasses.left;
-                    if (colIndex === 1) return cellToneClasses.middle;
-                    if (colIndex === 2) return cellToneClasses.right;
-                    return cellToneClasses.metric;
-                  }
-
-                  if (rowIndex === 2) {
-                    if (colIndex === 0) return cellToneClasses.left;
-                    if (colIndex === 1) return cellToneClasses.middle;
-                    if (colIndex === 2) return cellToneClasses.right;
-                    return cellToneClasses.metric;
-                  }
-
-                  if (rowIndex === 3) {
-                    if (colIndex === 0) return cellToneClasses.left;
-                    if (colIndex === 1) return cellToneClasses.middle;
-                    if (colIndex === 2) return cellToneClasses.right;
-                    return cellToneClasses.metric;
-                  }
-
-                  if (colIndex === 0) return cellToneClasses.left;
-                  if (colIndex === 1) return cellToneClasses.middle;
-                  if (colIndex === 2) return cellToneClasses.right;
-                  return cellToneClasses.metric;
-                })();
+                const isHiddenDescriptionCell =
+                  rowIndex === 0 && colIndex === 3;
+                const parsedCell = parseMatrixCell(rowIndex, colIndex, cell);
+                const fallbackEnergy = getEnergyByCellPosition(
+                  rowIndex,
+                  colIndex,
+                );
+                const effectiveEnergy =
+                  parsedCell.energy !== null && parsedCell.energy !== undefined
+                    ? parsedCell.energy
+                    : fallbackEnergy;
+                const theme = getCellTheme(rowIndex, colIndex, effectiveEnergy);
 
                 const isActive =
                   activeCell.rowIndex === rowIndex &&
                   activeCell.colIndex === colIndex;
                 const interactiveClass = isActive
-                  ? "ring-1 ring-teal-400/40 bg-[#1C202B] text-white shadow-[0_0_20px_rgba(45,212,191,0.12)]"
-                  : "hover:bg-[#181B24] hover:text-white hover:ring-1 hover:ring-white/5";
+                  ? "ring-1 ring-white/35"
+                  : "hover:brightness-110";
 
                 return (
                   <button
                     key={`${rowIndex}-${colIndex}`}
                     type="button"
-                    className={`${cellBaseClass} ${toneClass} ${interactiveClass} cursor-pointer transition`}
+                    className={`${cellBaseClass} ${theme.textClass} ${interactiveClass} cursor-pointer transition`}
+                    style={{
+                      borderColor: theme.border,
+                      background: `linear-gradient(180deg, ${theme.bg}, rgba(10,12,18,0.90))`,
+                      boxShadow: isActive
+                        ? `inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px ${theme.border}, 0 0 0 2px rgba(255,255,255,0.18), 0 0 26px -10px ${theme.glow}`
+                        : `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 10px 22px -12px rgba(0,0,0,0.8), 0 0 24px -16px ${theme.glow}`,
+                    }}
                     onMouseEnter={() => {
                       if (!isTouchMode) {
+                        if (isHiddenDescriptionCell) {
+                          setTooltip((prev) => ({ ...prev, visible: false }));
+                          return;
+                        }
                         setActiveCell({ rowIndex, colIndex });
                         setTooltip((prev) => ({ ...prev, visible: true }));
                       }
                     }}
                     onMouseMove={(event) => {
-                      if (!isTouchMode) {
+                      if (!isTouchMode && !isHiddenDescriptionCell) {
                         setTooltip({
                           visible: true,
                           x: event.clientX,
@@ -318,7 +495,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     }}
                     onFocus={() => setActiveCell({ rowIndex, colIndex })}
                     onClick={() => {
-                      if (!isTouchMode) {
+                      if (!isTouchMode && !isHiddenDescriptionCell) {
                         setActiveCell({ rowIndex, colIndex });
                       }
                     }}
@@ -340,10 +517,13 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
         createPortal(
           <div
             ref={tooltipRef}
-            className="pointer-events-none fixed z-50 w-[min(88vw,360px)] overflow-hidden rounded-[24px] border border-teal-500/30 bg-black p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8),0_0_30px_rgba(45,212,191,0.15)] h-auto"
+            className="pointer-events-none fixed z-50 h-auto w-[min(88vw,360px)] overflow-hidden rounded-[24px] border p-3"
             style={{
               left: tooltipPosition.left,
               top: tooltipPosition.top,
+              borderColor: activeTheme.border,
+              background: `linear-gradient(180deg, rgba(10,13,20,0.98), rgba(8,10,16,0.98))`,
+              boxShadow: `0 20px 40px -10px rgba(0,0,0,0.8), 0 0 30px -18px ${activeTheme.glow}, 0 0 0 1px ${activeTheme.border}`,
             }}
           >
             <p className="text-[11px] tracking-wide text-teal-200/85 uppercase">
@@ -369,33 +549,54 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           document.body,
         )}
 
-      {isTouchMode && (
-        <div className="mt-3 rounded-[26px] border border-teal-500/20 bg-[#0E1017]/82 p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.08)] backdrop-blur-xl">
-          <p className="text-[11px] tracking-widest text-teal-200/80 uppercase">
-            Розбір усіх комірок
-          </p>
-          <div className="mt-3 space-y-2.5">
-            {parsedCells.map((parsed, index) => (
-              <div
-                key={`${parsed.rowIndex}-${parsed.colIndex}-${index}`}
-                className="rounded-[20px] border border-white/[0.05] bg-[#13151C]/95 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_10px_22px_-14px_rgba(0,0,0,0.7)]"
-              >
-                <p className="text-[13px] font-semibold leading-snug text-slate-100/95">
-                  {parsed.rowLabel} • {parsed.columnLabel}
-                  {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
-                </p>
-                <p className="mt-1.5 text-base font-bold text-white">
-                  Значення: {parsed.rawValue || "—"}
-                </p>
-                {renderParsedBlock(
-                  parsed,
-                  "mt-2.5 rounded-[16px] border border-teal-500/20 bg-[#0F121A]/95 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]",
-                )}
-              </div>
-            ))}
-          </div>
+      <div className="mt-3 rounded-[26px] border border-teal-500/20 bg-[#0E1017]/82 p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.08)] backdrop-blur-xl">
+        <p className="text-[11px] tracking-widest text-teal-200/80 uppercase">
+          Розбір усіх комірок
+        </p>
+        <div className="mt-3 space-y-2.5">
+          {parsedCellsForList.map((parsed, index) =>
+            (() => {
+              const fallbackEnergy = getEnergyByCellPosition(
+                parsed.rowIndex,
+                parsed.colIndex,
+              );
+              const effectiveEnergy =
+                parsed.energy !== null && parsed.energy !== undefined
+                  ? parsed.energy
+                  : fallbackEnergy;
+              const theme = getCellTheme(
+                parsed.rowIndex,
+                parsed.colIndex,
+                effectiveEnergy,
+              );
+
+              return (
+                <div
+                  key={`${parsed.rowIndex}-${parsed.colIndex}-${index}`}
+                  className="rounded-[20px] border p-2.5"
+                  style={{
+                    borderColor: theme.border,
+                    background: `linear-gradient(180deg, rgba(16,19,28,0.95), rgba(10,12,18,0.98))`,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(0,0,0,0.75), 0 0 24px -18px ${theme.glow}`,
+                  }}
+                >
+                  <p className="text-[13px] font-semibold leading-snug text-slate-100/95">
+                    {parsed.rowLabel} • {parsed.columnLabel}
+                    {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
+                  </p>
+                  <p className="mt-1.5 text-base font-bold text-white">
+                    Значення: {parsed.rawValue || "—"}
+                  </p>
+                  {renderParsedBlock(
+                    parsed,
+                    "mt-2.5 rounded-[16px] border p-2.5",
+                  )}
+                </div>
+              );
+            })(),
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 });
