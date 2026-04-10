@@ -112,7 +112,7 @@ function formatDigitCell(digit: number, mainCount: number, bracketCount: number)
 
   const bracketPart = `(${String(digit).repeat(bracketCount)})`
   if (mainPart === '-') {
-    return bracketPart
+    return `-${bracketPart}`
   }
 
   return `${mainPart}${bracketPart}`
@@ -126,7 +126,7 @@ function formatSpecialCell(value: 10 | 11 | 12, mainCount: number, bracketCount:
 
   const bracketPart = `(${repeatToken(String(value), bracketCount)})`
   if (mainPart === '-') {
-    return bracketPart
+    return `-${bracketPart}`
   }
 
   return `${mainPart}${bracketPart}`
@@ -153,14 +153,14 @@ function formatSigma(mainValue: number | null, bracketValue: number | null): str
   }
 
   if (mainValue === null && bracketValue !== null) {
-    return `Σ (${bracketValue})`
+    return `(${bracketValue})`
   }
 
   if (mainValue !== null && bracketValue === null) {
-    return `Σ ${mainValue}`
+    return `${mainValue}`
   }
 
-  return `Σ ${mainValue}(${bracketValue})`
+  return `${mainValue}(${bracketValue})`
 }
 
 function weightedSumByDigits(digits: number[], counts: Record<number, number>): number {
@@ -181,6 +181,7 @@ export function parseMatrixCell(rowIndex: number, colIndex: number, rawValue: st
   const directNumberMatch = trimmed.match(/^(\d{1,2})$/)
   const multiSpecialMatch = trimmed.match(/^(\d{1,2})(?:\s+\d{1,2})+(?:\((\d{1,2})\))?$/)
   const bracketOnlyMatch = trimmed.match(/^\((\d+)\)$/)
+  const dashBracketMatch = trimmed.match(/^-\((\d+)\)$/)
 
   const energy = sigmaMatch
     ? Number.parseInt(sigmaMatch[1], 10)
@@ -192,6 +193,8 @@ export function parseMatrixCell(rowIndex: number, colIndex: number, rawValue: st
           ? Number.parseInt(multiSpecialMatch[1], 10)
           : bracketOnlyMatch
             ? Number.parseInt(bracketOnlyMatch[1], 10)
+            : dashBracketMatch
+              ? Number.parseInt(dashBracketMatch[1], 10)
             : null
 
   const bracketPart = trimmed.match(/\(([^)]+)\)/)?.[1] ?? ''

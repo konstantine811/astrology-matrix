@@ -18,14 +18,14 @@ type MatrixSummaryTableProps = {
 };
 
 const cellBaseClass =
-  "flex min-h-11 items-center justify-center border border-white/20 px-2 text-center text-sm font-semibold text-white sm:min-h-12 sm:text-base";
+  "relative flex min-h-11 items-center justify-center rounded-[18px] border border-white/[0.04] bg-[#13151C] px-2 text-center text-sm font-semibold text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_10px_22px_-12px_rgba(0,0,0,0.8)] backdrop-blur-sm transition-all duration-300 sm:min-h-12 sm:text-base";
 
 const cellToneClasses = {
-  neutral: "bg-white/[0.04]",
-  left: "bg-gradient-to-r from-fuchsia-500/35 to-fuchsia-400/20",
-  middle: "bg-gradient-to-r from-cyan-500/30 to-indigo-500/20",
-  right: "bg-gradient-to-r from-blue-600/35 to-purple-600/20",
-  metric: "bg-white/[0.06] text-cyan-100",
+  neutral: "bg-[#13151C] text-slate-300",
+  left: "bg-[#151821] text-slate-200",
+  middle: "bg-[#161A23] text-slate-200",
+  right: "bg-[#181B25] text-slate-100",
+  metric: "bg-[#1C202B] text-teal-200",
 } as const;
 
 export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
@@ -72,7 +72,9 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
   const parsedCells = useMemo(
     () =>
       rows.flatMap((row, rowIndex) =>
-        row.map((value, colIndex) => parseMatrixCell(rowIndex, colIndex, value)),
+        row.map((value, colIndex) =>
+          parseMatrixCell(rowIndex, colIndex, value),
+        ),
       ),
     [rows],
   );
@@ -81,12 +83,12 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
     typeof window !== "undefined" ? window.innerWidth : 1280;
   const viewportHeight =
     typeof window !== "undefined" ? window.innerHeight : 720;
-  const tooltipX = Math.min(viewportWidth - 100, Math.max(100, tooltip.x - 15));
-  const tooltipBottom = Math.max(8, viewportHeight - tooltip.y - 95);
+  const tooltipX = Math.min(viewportWidth, Math.max(0, tooltip.x - 800));
+  const tooltipBottom = Math.max(8, viewportHeight - tooltip.y + 220);
 
   const renderParsedBlock = (
     parsed: ReturnType<typeof parseMatrixCell>,
-    className = "mt-2 rounded-lg border border-cyan-200/20 bg-white/5 p-2",
+    className = "mt-2 rounded-[16px] border border-white/[0.06] bg-[#13151C]/95 p-2.5",
   ) => {
     const profile =
       parsed.energy !== null && parsed.energy !== undefined
@@ -96,7 +98,8 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
       parsed.energy !== null && parsed.energy !== undefined
         ? ENERGY_NORM_COUNT[parsed.energy]
         : undefined;
-    const status = count !== undefined ? getNormStatus(parsed.mainCount, count) : null;
+    const status =
+      count !== undefined ? getNormStatus(parsed.mainCount, count) : null;
     const statusLabel =
       status === "normal"
         ? "Норма"
@@ -114,16 +117,20 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
             ? profile?.above
             : "Енергія зазвичай проявляється ситуативно, через необхідність і зусилля.";
     const currentLevel =
-      parsed.mainCount > 0 ? ENERGY_LEVELS[Math.min(7, parsed.mainCount)] ?? null : null;
+      parsed.mainCount > 0
+        ? (ENERGY_LEVELS[Math.min(7, parsed.mainCount)] ?? null)
+        : null;
 
     if (parsed.colIndex === 3) {
       return (
         <div className={className}>
           <p className="text-xs text-white/80">
-            `Σ` у 4-му стовпці: підсумкова резонансна енергія рядка (як це бачать інші).
+            `Σ` у 4-му стовпці: підсумкова резонансна енергія рядка (як це
+            бачать інші).
           </p>
           <p className="mt-1 text-xs text-white/70">
-            Число без дужок — явний прояв, у дужках — другий/прихований шар сприйняття.
+            Число без дужок — явний прояв, у дужках — другий/прихований шар
+            сприйняття.
           </p>
         </div>
       );
@@ -145,17 +152,26 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
           Енергія {parsed.energy}
           {profile ? ` • ${profile.name} (${profile.planet})` : ""}
         </p>
-        {profile?.base && <p className="mt-1 text-xs text-white/80">{profile.base}</p>}
+        {profile?.base && (
+          <p className="mt-1 text-xs text-white/80">{profile.base}</p>
+        )}
         <p className="mt-1 text-xs text-white/85">
           Норма: {count ?? "—"} • Факт: {parsed.mainCount}
           {parsed.bracketCount > 0 ? ` (+${parsed.bracketCount} у дужках)` : ""}
         </p>
-        <p className="mt-1 text-xs font-medium text-cyan-50">Статус: {statusLabel}</p>
-        {statusText && <p className="mt-1 text-xs text-white/80">{statusText}</p>}
-        {currentLevel && <p className="mt-1 text-xs text-white/75">{currentLevel}</p>}
+        <p className="mt-1 text-xs font-medium text-cyan-50">
+          Статус: {statusLabel}
+        </p>
+        {statusText && (
+          <p className="mt-1 text-xs text-white/80">{statusText}</p>
+        )}
+        {currentLevel && (
+          <p className="mt-1 text-xs text-white/75">{currentLevel}</p>
+        )}
         {parsed.bracketCount > 0 && (
           <p className="mt-1 text-xs text-white/70">
-            Значення в дужках показує прихований/нестійкий потенціал, що потребує пропрацювання.
+            Значення в дужках показує прихований/нестійкий потенціал, що
+            потребує пропрацювання.
           </p>
         )}
       </div>
@@ -163,36 +179,37 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
   };
 
   return (
-    <div className="mb-3 w-full bg-transparent p-0">
-      <div className="mb-2 grid grid-cols-4 gap-1 px-1">
+    <div className="relative mb-3 w-full md:rounded-[32px] rounded-xl  border border-white/[0.03] bg-[#0A0C10] p-3 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.02)] backdrop-blur-md">
+      <div className="pointer-events-none absolute inset-0 md:rounded-[32px] shadow-[0_0_60px_rgba(45,212,191,0.04)]" />
+      <div className="relative mb-2 grid grid-cols-4 gap-1.5 px-1">
         {MATRIX_COLUMN_LABELS.map((label) => (
           <div
             key={label}
-            className="rounded-lg border border-cyan-300/25 bg-cyan-500/10 px-2 py-1.5 text-center text-[10px] font-semibold tracking-wide text-cyan-100 uppercase sm:text-[11px]"
+            className="md:rounded-full rounded-sm border border-white/[0.03] bg-[#12141A] md:px-2 py-2 text-center md:text-[10px] text-[8px] font-semibold tracking-widest text-slate-400 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:text-[11px] text-pretty"
           >
             {label}
           </div>
         ))}
       </div>
 
-      <div className="space-y-1">
+      <div className="relative space-y-1.5">
         {rows.map((row, rowIndex) => (
           <div
             key={`row-${rowIndex}`}
             className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,4fr)] gap-1"
           >
-            <div className="rounded-lg border border-white/15 bg-white/[0.05] px-2 py-2">
-              <p className="text-[11px] leading-tight text-white/85">
+            <div className="rounded-[18px] border border-white/[0.03] bg-[#0E1016] px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+              <p className="md:text-[11px] text-[9px] leading-tight text-slate-300/90">
                 {MATRIX_ROW_LABELS[rowIndex] ?? `Ряд ${rowIndex + 1}`}
               </p>
               {MATRIX_ROW_TIME_LABELS[rowIndex] && (
-                <p className="mt-1 text-[10px] tracking-wide text-cyan-200/90 uppercase">
+                <p className="mt-1 text-[10px] tracking-wide text-teal-300/75 uppercase">
                   {MATRIX_ROW_TIME_LABELS[rowIndex]}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-4 overflow-hidden rounded-lg">
+            <div className="grid grid-cols-4 gap-1.5">
               {row.map((cell, colIndex) => {
                 const toneClass = (() => {
                   if (rowIndex === 0) {
@@ -204,34 +221,27 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
                   if (rowIndex === 1) {
                     if (colIndex === 0) return cellToneClasses.left;
                     if (colIndex === 1) return cellToneClasses.middle;
-                    if (colIndex === 2)
-                      return "bg-gradient-to-r from-emerald-400/35 to-yellow-300/25";
+                    if (colIndex === 2) return cellToneClasses.right;
                     return cellToneClasses.metric;
                   }
 
                   if (rowIndex === 2) {
-                    if (colIndex === 0)
-                      return "bg-gradient-to-r from-violet-500/35 to-fuchsia-500/20";
-                    if (colIndex === 1)
-                      return "bg-gradient-to-r from-green-500/35 to-teal-500/20";
-                    if (colIndex === 2)
-                      return "bg-gradient-to-r from-yellow-200/35 to-yellow-400/25 text-slate-900";
-                    return cellToneClasses.metric;
-                  }
-
-                  if (rowIndex === 3) {
-                    if (colIndex === 0)
-                      return "bg-gradient-to-r from-pink-500/35 to-purple-500/20";
+                    if (colIndex === 0) return cellToneClasses.left;
                     if (colIndex === 1) return cellToneClasses.middle;
                     if (colIndex === 2) return cellToneClasses.right;
                     return cellToneClasses.metric;
                   }
 
-                  if (colIndex === 0)
-                    return "bg-gradient-to-r from-fuchsia-600/45 to-pink-500/35";
-                  if (colIndex === 1) return "bg-white/[0.04]";
-                  if (colIndex === 2)
-                    return "bg-gradient-to-r from-violet-700/40 to-indigo-700/30";
+                  if (rowIndex === 3) {
+                    if (colIndex === 0) return cellToneClasses.left;
+                    if (colIndex === 1) return cellToneClasses.middle;
+                    if (colIndex === 2) return cellToneClasses.right;
+                    return cellToneClasses.metric;
+                  }
+
+                  if (colIndex === 0) return cellToneClasses.left;
+                  if (colIndex === 1) return cellToneClasses.middle;
+                  if (colIndex === 2) return cellToneClasses.right;
                   return cellToneClasses.metric;
                 })();
 
@@ -239,8 +249,8 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
                   activeCell.rowIndex === rowIndex &&
                   activeCell.colIndex === colIndex;
                 const interactiveClass = isActive
-                  ? "ring-2 ring-cyan-300/70 ring-inset"
-                  : "hover:ring-2 hover:ring-cyan-300/45 hover:ring-inset";
+                  ? "ring-1 ring-teal-400/40 bg-[#1C202B] text-white shadow-[0_0_20px_rgba(45,212,191,0.12)]"
+                  : "hover:bg-[#181B24] hover:text-white hover:ring-1 hover:ring-white/5";
 
                 return (
                   <button
@@ -286,18 +296,16 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
 
       {!isTouchMode && tooltip.visible && activeParsed && (
         <div
-          className="pointer-events-none fixed z-30 w-[min(88vw,360px)] rounded-xl border border-cyan-200/35 bg-slate-950/92 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm"
+          className="pointer-events-none fixed z-30 w-[min(88vw,360px)] overflow-hidden rounded-[24px] border border-teal-500/30 bg-black p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8),0_0_30px_rgba(45,212,191,0.15)] h-auto"
           style={{
-            left: tooltipX,
-            bottom: tooltipBottom,
-            transform: "translateX(-50%)",
+            transform: `translate(${tooltipX}px, ${-tooltipBottom}px)`,
           }}
         >
-          <p className="text-[11px] tracking-wide text-cyan-100/90 uppercase">
+          <p className="text-[11px] tracking-wide text-teal-200/85 uppercase">
             {activeParsed.rowLabel} • {activeParsed.columnLabel}
             {activeParsed.timeLabel ? ` • ${activeParsed.timeLabel}` : ""}
           </p>
-          <p className="mt-1 text-sm font-bold text-cyan-50">
+          <p className="mt-1 text-sm font-bold text-white">
             Значення: {activeParsed.rawValue || "—"}
           </p>
           {renderParsedBlock(activeParsed)}
@@ -309,28 +317,34 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
               height: 0,
               borderLeft: "7px solid transparent",
               borderRight: "7px solid transparent",
-              borderTop: "8px solid rgba(15, 23, 42, 0.92)",
+              borderTop: "8px solid rgba(14, 16, 23, 0.85)",
             }}
           />
         </div>
       )}
 
       {isTouchMode && (
-        <div className="mt-2 rounded-xl border border-cyan-200/20 bg-cyan-950/25 p-3">
-          <p className="text-[11px] tracking-wide text-cyan-100/85 uppercase">
+        <div className="mt-3 rounded-[26px] border border-teal-500/20 bg-[#0E1017]/82 p-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.08)] backdrop-blur-xl">
+          <p className="text-[11px] tracking-widest text-teal-200/80 uppercase">
             Розбір усіх комірок
           </p>
-          <div className="mt-2 space-y-2">
+          <div className="mt-3 space-y-2.5">
             {parsedCells.map((parsed, index) => (
-              <div key={`${parsed.rowIndex}-${parsed.colIndex}-${index}`} className="rounded-lg border border-white/10 bg-black/20 p-2">
-                <p className="text-sm font-semibold text-white">
+              <div
+                key={`${parsed.rowIndex}-${parsed.colIndex}-${index}`}
+                className="rounded-[20px] border border-white/[0.05] bg-[#13151C]/95 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_10px_22px_-14px_rgba(0,0,0,0.7)]"
+              >
+                <p className="text-[13px] font-semibold leading-snug text-slate-100/95">
                   {parsed.rowLabel} • {parsed.columnLabel}
                   {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
                 </p>
-                <p className="mt-1 text-base font-bold text-cyan-50">
+                <p className="mt-1.5 text-base font-bold text-white">
                   Значення: {parsed.rawValue || "—"}
                 </p>
-                {renderParsedBlock(parsed, "mt-2 rounded-lg border border-cyan-200/20 bg-white/5 p-2")}
+                {renderParsedBlock(
+                  parsed,
+                  "mt-2.5 rounded-[16px] border border-teal-500/20 bg-[#0F121A]/95 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]",
+                )}
               </div>
             ))}
           </div>

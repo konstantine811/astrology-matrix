@@ -90,12 +90,11 @@ function App() {
                 onYearChange={setYearIndex}
               />
             </div>
-            <div className="max-w-3xl w-full flex justify-center items-center">
+            <div className="max-w-3xl w-full flex justify-center items-center  relative z-50">
               <MatrixSummaryTable rows={modelTable.rows} />
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
