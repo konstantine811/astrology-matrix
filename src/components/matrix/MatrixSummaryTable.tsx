@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   ENERGY_LEVELS,
@@ -29,7 +36,9 @@ const cellToneClasses = {
   metric: "bg-[#1C202B] text-teal-200",
 } as const;
 
-export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
+export const MatrixSummaryTable = memo(function MatrixSummaryTable({
+  rows,
+}: MatrixSummaryTableProps) {
   const [isTouchMode, setIsTouchMode] = useState(false);
   const [activeCell, setActiveCell] = useState<{
     rowIndex: number;
@@ -389,4 +398,4 @@ export function MatrixSummaryTable({ rows }: MatrixSummaryTableProps) {
       )}
     </div>
   );
-}
+});

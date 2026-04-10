@@ -29,17 +29,35 @@ function App() {
     () => createDayOptions(monthIndex, selectedYear),
     [monthIndex, selectedYear],
   );
-  const selectedDay = Number.parseInt(days[dayIndex], 10);
+  const safeDayIndex = Math.min(dayIndex, Math.max(0, days.length - 1));
+  const selectedDay = Number.parseInt(days[safeDayIndex], 10);
   const selectedDate = useMemo(
     () => new Date(selectedYear, monthIndex, selectedDay),
     [monthIndex, selectedDay, selectedYear],
   );
+  const [debouncedBirthDate, setDebouncedBirthDate] = useState({
+    day: selectedDay,
+    month: monthIndex + 1,
+    year: selectedYear,
+  });
 
   useEffect(() => {
     if (dayIndex > days.length - 1) {
       setDayIndex(days.length - 1);
     }
   }, [dayIndex, days.length]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedBirthDate({
+        day: selectedDay,
+        month: monthIndex + 1,
+        year: selectedYear,
+      });
+    }, 200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [monthIndex, selectedDay, selectedYear]);
 
   // const matrixData = useMemo(() => {
   //   return calculateDestinyMatrix({
@@ -52,11 +70,11 @@ function App() {
   const modelTable = useMemo(
     () =>
       buildMatrixModelTable({
-        day: selectedDay,
-        month: monthIndex + 1,
-        year: selectedYear,
+        day: debouncedBirthDate.day,
+        month: debouncedBirthDate.month,
+        year: debouncedBirthDate.year,
       }),
-    [monthIndex, selectedDay, selectedYear],
+    [debouncedBirthDate.day, debouncedBirthDate.month, debouncedBirthDate.year],
   );
 
   const handleDateSelect = (date: Date) => {
