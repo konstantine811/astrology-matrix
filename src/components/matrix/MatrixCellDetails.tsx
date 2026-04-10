@@ -1,16 +1,11 @@
 import { MATRIX_INTERPRETATIONS } from "../../data/matrixInterpretations";
 import type { MatrixData } from "../../types/matrix";
-import type { MatrixModelTableRow } from "../../utils/modelTable";
+import { parseMatrixCell, type MatrixModelTableRow } from "../../utils/modelTable";
 
 type MatrixCellDetailsProps = {
   matrix: MatrixData;
   rows: MatrixModelTableRow[];
 };
-
-function cellLabel(rowIndex: number, colIndex: number): string {
-  const col = ["I", "II", "III", "IV"][colIndex] ?? `${colIndex + 1}`;
-  return `Ряд ${rowIndex + 1}, Стовпець ${col}`;
-}
 
 export function MatrixCellDetails({ rows }: MatrixCellDetailsProps) {
   const describe = (value: number) => MATRIX_INTERPRETATIONS[value];
@@ -63,16 +58,8 @@ export function MatrixCellDetails({ rows }: MatrixCellDetailsProps) {
       <div className="grid gap-2.5 sm:grid-cols-2">
         {rows.flatMap((row, rowIndex) =>
           row.map((cellValue, colIndex) => {
-            const bracketMatch = cellValue.match(/\((\d+)\)\s*$/);
-            const directNumberMatch = cellValue.match(/^(\d{1,2})$/);
-            const repeatedDigitMatch = cellValue.match(/^(\d)\1+$/);
-            const energy = bracketMatch
-              ? Number.parseInt(bracketMatch[1], 10)
-              : directNumberMatch
-                ? Number.parseInt(directNumberMatch[1], 10)
-                : repeatedDigitMatch
-                  ? Number.parseInt(repeatedDigitMatch[1], 10)
-                  : null;
+            const parsed = parseMatrixCell(rowIndex, colIndex, cellValue);
+            const energy = parsed.energy;
             const meaning = energy !== null ? describe(energy) : null;
 
             return (
@@ -81,10 +68,14 @@ export function MatrixCellDetails({ rows }: MatrixCellDetailsProps) {
                 className="rounded-xl border border-white/10 bg-black/20 p-2.5"
               >
                 <p className="text-[11px] text-white/50">
-                  {cellLabel(rowIndex, colIndex)}
+                  {parsed.rowLabel}
+                </p>
+                <p className="mt-0.5 text-[11px] text-cyan-100/90">
+                  {parsed.columnLabel}
+                  {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
                 </p>
                 <p className="mt-0.5 text-base font-bold text-white">
-                  {cellValue || "—"}
+                  {parsed.rawValue || "—"}
                 </p>
                 {energy === null ? (
                   <p className="mt-1 text-xs text-white/60">

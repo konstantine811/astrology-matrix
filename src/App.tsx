@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Particles } from "./components/background/Particles";
 import { BirthDatePicker } from "./components/date-picker/BirthDatePicker";
-import { MatrixCellDetails } from "./components/matrix/MatrixCellDetails";
 import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
 import { MatrixSummaryTable } from "./components/matrix/MatrixSummaryTable";
 import {
@@ -65,8 +64,8 @@ function App() {
           Матриця Долі
         </h1>
 
-        <div className="max-w-lg w-full backdrop-blur-[1px]">
-          <div className="mb-4 w-full">
+        <div className="w-full backdrop-blur-[1px]">
+          <div className="mb-4 w-full flex flex-col items-center justify-center">
             <div className="mb-3 flex items-center justify-center gap-2">
               <span className="text-indigo-300">✧</span>
               <span className="text-xs font-medium tracking-widest text-indigo-200/80 uppercase">
@@ -74,26 +73,29 @@ function App() {
               </span>
             </div>
 
-            <MatrixDiagram matrix={matrixData} />
+            <div className="max-w-3xl w-full">
+              <MatrixDiagram matrix={matrixData} />
+            </div>
 
-            <BirthDatePicker
-              months={MONTHS_UA}
-              days={days}
-              years={years}
-              monthIndex={monthIndex}
-              dayIndex={dayIndex}
-              yearIndex={yearIndex}
-              onMonthChange={setMonthIndex}
-              onDayChange={setDayIndex}
-              onYearChange={setYearIndex}
-            />
-            <MatrixSummaryTable rows={modelTable.rows} />
+            <div className="max-w-sm w-full flex justify-center items-center">
+              <BirthDatePicker
+                months={MONTHS_UA}
+                days={days}
+                years={years}
+                monthIndex={monthIndex}
+                dayIndex={dayIndex}
+                yearIndex={yearIndex}
+                onMonthChange={setMonthIndex}
+                onDayChange={setDayIndex}
+                onYearChange={setYearIndex}
+              />
+            </div>
+            <div className="max-w-3xl w-full flex justify-center items-center">
+              <MatrixSummaryTable rows={modelTable.rows} />
+            </div>
           </div>
         </div>
 
-        <div className="max-w-7xl w-full backdrop-blur-[1px]">
-          <MatrixCellDetails matrix={matrixData} rows={modelTable.rows} />
-        </div>
       </div>
     </div>
   );
