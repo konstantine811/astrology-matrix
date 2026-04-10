@@ -12,7 +12,7 @@ function cellLabel(rowIndex: number, colIndex: number): string {
   return `Ряд ${rowIndex + 1}, Стовпець ${col}`;
 }
 
-export function MatrixCellDetails({ matrix, rows }: MatrixCellDetailsProps) {
+export function MatrixCellDetails({ rows }: MatrixCellDetailsProps) {
   const describe = (value: number) => MATRIX_INTERPRETATIONS[value];
 
   // const coreEntries: Array<{ key: string; value: number; formula: string }> = [
