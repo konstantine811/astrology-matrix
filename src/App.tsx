@@ -30,6 +30,10 @@ function App() {
     [monthIndex, selectedYear],
   );
   const selectedDay = Number.parseInt(days[dayIndex], 10);
+  const selectedDate = useMemo(
+    () => new Date(selectedYear, monthIndex, selectedDay),
+    [monthIndex, selectedDay, selectedYear],
+  );
 
   useEffect(() => {
     if (dayIndex > days.length - 1) {
@@ -54,6 +58,20 @@ function App() {
       }),
     [monthIndex, selectedDay, selectedYear],
   );
+
+  const handleDateSelect = (date: Date) => {
+    const nextYearIndex = years.indexOf(String(date.getFullYear()));
+    if (nextYearIndex >= 0) {
+      setYearIndex(nextYearIndex);
+    }
+
+    setMonthIndex(date.getMonth());
+
+    const nextDays = createDayOptions(date.getMonth(), date.getFullYear());
+    const dayStr = String(date.getDate()).padStart(2, "0");
+    const nextDayIndex = nextDays.indexOf(dayStr);
+    setDayIndex(nextDayIndex >= 0 ? nextDayIndex : 0);
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-2 text-white sm:py-6">
@@ -89,6 +107,8 @@ function App() {
                 onMonthChange={setMonthIndex}
                 onDayChange={setDayIndex}
                 onYearChange={setYearIndex}
+                selectedDate={selectedDate}
+                onDateSelect={handleDateSelect}
               />
             </div>
             <div className="max-w-3xl w-full flex justify-center items-center  relative z-50">
