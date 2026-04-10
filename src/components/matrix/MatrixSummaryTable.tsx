@@ -484,7 +484,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   };
 
   return (
-    <div className="relative mb-3 w-full md:rounded-[32px] rounded-xl  border border-white/[0.03] bg-[#0A0C10]/1 p-3 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.02)] backdrop-blur-md">
+    <div className="relative mb-3 w-full md:rounded-[32px] rounded-xl  border border-white/[0.03] bg-[#0A0C10]/1 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.02)] backdrop-blur-md">
       <div className="pointer-events-none absolute inset-0 md:rounded-[32px] shadow-[0_0_60px_rgba(45,212,191,0.04)]" />
       <div className="relative mb-2 grid grid-cols-[minmax(0,1.2fr)_minmax(0,4fr)] gap-1 px-1">
         <div />
@@ -500,7 +500,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
         </div>
       </div>
 
-      <div className="relative space-y-1.5">
+      <div className="relative space-y-1.5 px-1">
         {rows.map((row, rowIndex) => (
           <div
             key={`row-${rowIndex}`}

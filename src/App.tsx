@@ -92,7 +92,7 @@ function App() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-2 text-white sm:py-6">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 text-white sm:py-6">
       <Particles />
 
       <div className="relative z-10 flex w-full flex-col items-center">
