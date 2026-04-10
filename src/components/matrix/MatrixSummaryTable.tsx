@@ -26,99 +26,185 @@ type MatrixSummaryTableProps = {
 };
 
 const cellBaseClass =
-  "relative flex min-h-11 items-center justify-center rounded-[18px] border px-2 text-center text-sm font-semibold text-slate-100 backdrop-blur-sm transition-all duration-300 sm:min-h-12 sm:text-base";
+  "relative flex min-h-11 items-center justify-center rounded-[18px] border px-2 text-center text-sm font-semibold text-slate-100 backdrop-blur-xs transition-all duration-300 sm:min-h-12 sm:text-base";
 
 type CellTheme = {
-  bg: string;
+  from: string;
+  to: string;
   border: string;
+  inset: string;
   glow: string;
   textClass: string;
 };
 
-const ENERGY_CELL_THEME: Record<number, CellTheme> = {
-  0: {
-    bg: "rgba(42,50,72,0.22)",
-    border: "rgba(167,139,250,0.08)",
-    glow: "rgba(167,139,250,0.22)",
-    textClass: "text-slate-100",
+const STATIC_CELL_THEME: Record<string, CellTheme> = {
+  "0-0": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
-  1: {
-    bg: "rgba(24,125,40,0.10)",
-    border: "rgba(52,211,153,0.12)",
-    glow: "rgba(34,197,94,0.24)",
-    textClass: "text-emerald-50",
+  "0-1": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
-  2: {
-    bg: "rgba(168,85,247,0.12)",
-    border: "rgba(244,114,182,0.14)",
-    glow: "rgba(236,72,153,0.25)",
-    textClass: "text-fuchsia-50",
+  "0-2": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
-  3: {
-    bg: "rgba(202,194,60,0.12)",
-    border: "rgba(250,204,21,0.06)",
-    glow: "rgba(250,204,21,0.22)",
-    textClass: "text-yellow-50",
+  "0-3": {
+    from: "rgba(255,255,255,0.02)",
+    to: "rgba(255,255,255,0.01)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
-  4: {
-    bg: "rgba(206,79,203,0.12)",
-    border: "rgba(244,114,182,0.04)",
-    glow: "rgba(236,72,153,0.22)",
-    textClass: "text-pink-50",
+  "1-0": {
+    from: "rgba(52, 211, 153, 0.2)",
+    to: "rgba(52, 211, 153,0.05)",
+    border: "rgba(52, 211, 153,0.03)",
+    inset: "rgba(52, 211, 153,0.12)",
+    glow: "rgba(52, 211, 153,0.88)",
+    textClass: "text-pink-100/70",
   },
-  5: {
-    bg: "rgba(21,128,61,0.12)",
-    border: "rgba(74,222,128,0.04)",
-    glow: "rgba(34,197,94,0.24)",
-    textClass: "text-emerald-50",
+  "1-1": {
+    from: "rgba(244, 114, 182,0.2)",
+    to: "rgba(244, 114, 182,0.05)",
+    border: "rgba(244, 114, 182,0.03)",
+    inset: "rgba(244, 114, 182,0.02)",
+    glow: "rgba(244, 114, 182,0.8)",
+    textClass: "text-slate-200",
   },
-  6: {
-    bg: "rgba(181,171,42,0.15)",
-    border: "rgba(253,224,71,0.04)",
-    glow: "rgba(250,204,21,0.22)",
-    textClass: "text-yellow-50",
+  "1-2": {
+    from: "rgba(253, 230, 138,0.3)",
+    to: "rgba(253, 230, 138,0.01)",
+    border: "rgba(253, 230, 138,0.04)",
+    inset: "rgba(253, 230, 138,0.12)",
+    glow: "rgba(253, 230, 138,0.88)",
+    textClass: "text-blue-100/70",
   },
-  7: {
-    bg: "rgba(194,70,199,0.12)",
-    border: "rgba(232,121,249,0.04)",
-    glow: "rgba(217,70,239,0.24)",
-    textClass: "text-fuchsia-50",
+  "1-3": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
-  8: {
-    bg: "rgba(24,125,221,0.14)",
-    border: "rgba(56,189,248,0.05)",
-    glow: "rgba(14,165,233,0.25)",
-    textClass: "text-sky-50",
+  "2-0": {
+    from: "rgba(244, 114, 182,0.2)",
+    to: "rgba(244, 114, 182,0.05)",
+    border: "rgba(244, 114, 182,0.03)",
+    inset: "rgba(244, 114, 182,0.02)",
+    glow: "rgba(244, 114, 182,0.8)",
+    textClass: "text-slate-200",
   },
-  9: {
-    bg: "rgba(28,42,176,0.18)",
-    border: "rgba(99,102,241,0.05)",
-    glow: "rgba(79,70,229,0.24)",
-    textClass: "text-indigo-50",
+  "2-1": {
+    from: "rgba(52, 211, 153, 0.2)",
+    to: "rgba(52, 211, 153,0.05)",
+    border: "rgba(52, 211, 153,0.03)",
+    inset: "rgba(52, 211, 153,0.12)",
+    glow: "rgba(52, 211, 153,0.88)",
+    textClass: "text-pink-100/70",
   },
-  10: {
-    bg: "rgba(235,28,144,0.12)",
-    border: "rgba(244,114,182,0.06)",
-    glow: "rgba(236,72,153,0.24)",
-    textClass: "text-pink-50",
+  "2-2": {
+    from: "rgba(253, 230, 138,0.3)",
+    to: "rgba(253, 230, 138,0.01)",
+    border: "rgba(253, 230, 138,0.04)",
+    inset: "rgba(253, 230, 138,0.12)",
+    glow: "rgba(253, 230, 138,0.88)",
+    textClass: "text-blue-100/70",
   },
-  11: {
-    bg: "rgba(199,21,133,0.13)",
-    border: "rgba(244,114,182,0.05)",
-    glow: "rgba(217,70,239,0.24)",
-    textClass: "text-fuchsia-50",
+  "2-3": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
-  12: {
-    bg: "rgba(120,25,150,0.15)",
-    border: "rgba(192,132,252,0.06)",
-    glow: "rgba(168,85,247,0.25)",
-    textClass: "text-purple-50",
+  "3-0": {
+    from: "rgba(244, 114, 182,0.2)",
+    to: "rgba(244, 114, 182,0.05)",
+    border: "rgba(244, 114, 182,0.03)",
+    inset: "rgba(244, 114, 182,0.02)",
+    glow: "rgba(244, 114, 182,0.8)",
+    textClass: "text-slate-200",
+  },
+  "3-1": {
+    from: "rgba(34,211,238,0.10)",
+    to: "rgba(255,255,255,0.01)",
+    border: "rgba(34,211,238,0.10)",
+    inset: "rgba(34,211,238,0.40)",
+    glow: "rgba(34,211,238,0.26)",
+    textClass: "text-cyan-50",
+  },
+  "3-2": {
+    from: "rgba(49, 46, 129,0.6)",
+    to: "rgba(249, 46, 129,0.1)",
+    border: "rgba(49, 46, 129,0.14)",
+    inset: "rgba(49, 46, 129,0.12)",
+    glow: "rgba(49, 46, 129,0.8)",
+    textClass: "text-blue-100/70",
+  },
+  "3-3": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
+  },
+  "4-0": {
+    from: "rgba(220, 38, 38,0.3)",
+    to: "rgba(220, 38, 38,0.1)",
+    border: "rgba(220, 38, 38,0.01)",
+    inset: "rgba(255,255,255,0.01)",
+    glow: "rgba(220, 38, 38,0.8)",
+    textClass: "text-slate-200",
+  },
+  "4-1": {
+    from: "rgba(220, 38, 38,0.3)",
+    to: "rgba(220, 38, 38,0.1)",
+    border: "rgba(220, 38, 38,0.01)",
+    inset: "rgba(255,255,255,0.01)",
+    glow: "rgba(220, 38, 38,0.8)",
+    textClass: "text-slate-200",
+  },
+  "4-2": {
+    from: "rgba(157, 23, 77,0.7)",
+    to: "rgba(157, 23, 77,0.1)",
+    border: "rgba(157, 23, 77,0.06)",
+    inset: "rgba(157, 23, 77,0.02)",
+    glow: "rgba(157, 23, 77,0.10)",
+    textClass: "text-slate-200",
+  },
+  "4-3": {
+    from: "rgba(255,255,255,0.08)",
+    to: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.06)",
+    inset: "rgba(255,255,255,0.02)",
+    glow: "rgba(255,255,255,0.10)",
+    textClass: "text-slate-200",
   },
 };
 
 const DEFAULT_THEME: CellTheme = {
-  bg: "rgba(19,21,28,0.95)",
-  border: "rgba(255,255,255,0.08)",
+  from: "rgba(255,255,255,0.02)",
+  to: "rgba(255,255,255,0.01)",
+  border: "rgba(255,255,255,0.06)",
+  inset: "rgba(255,255,255,0.02)",
   glow: "rgba(45,212,191,0.10)",
   textClass: "text-slate-200",
 };
@@ -137,29 +223,8 @@ function getCellTheme(
   colIndex: number,
   energy: number | null,
 ): CellTheme {
-  if (rowIndex === 0 && colIndex === 3) {
-    return {
-      bg: "rgba(28,32,43,0.95)",
-      border: "rgba(94,234,212,0.20)",
-      glow: "rgba(45,212,191,0.14)",
-      textClass: "text-teal-100",
-    };
-  }
-
-  if (energy !== null && ENERGY_CELL_THEME[energy]) {
-    return ENERGY_CELL_THEME[energy];
-  }
-
-  if (colIndex === 3) {
-    return {
-      bg: "rgba(28,32,43,0.90)",
-      border: "rgba(94,234,212,0.22)",
-      glow: "rgba(45,212,191,0.14)",
-      textClass: "text-teal-100",
-    };
-  }
-
-  return DEFAULT_THEME;
+  void energy;
+  return STATIC_CELL_THEME[`${rowIndex}-${colIndex}`] ?? DEFAULT_THEME;
 }
 
 export const MatrixSummaryTable = memo(function MatrixSummaryTable({
@@ -341,9 +406,26 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     if (effectiveEnergy === null) {
       return (
         <div className={className}>
-          <p className="text-xs text-white/75">
-            Для цієї комірки енергія не виділена окремим числом.
-          </p>
+          {isImageColumn ? (
+            <>
+              <p className="text-xs text-cyan-100/90">
+                4-й стовпчик: це імідж і резонансне враження про тебе, як тебе
+                бачать інші люди.
+              </p>
+              <p className="mt-1 text-xs text-white/80">
+                Наразі явний іміджевий сигнал у цій зоні не сформований.
+              </p>
+              <p className="mt-1 text-xs font-medium text-cyan-100/90">
+                Що зробити, щоб вас краще розуміли люди: прямо проговорюйте
+                свою позицію, узгоджуйте очікування і підкріплюйте наміри
+                конкретними діями.
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-white/75">
+              Для цієї комірки енергія не виділена окремим числом.
+            </p>
+          )}
         </div>
       );
     }
@@ -353,8 +435,8 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
         className={className}
         style={{
           borderColor: cardTheme.border,
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${cardTheme.border}, 0 12px 28px -18px rgba(0,0,0,0.85), 0 0 26px -18px ${cardTheme.glow}`,
-          background: `linear-gradient(180deg, ${cardTheme.bg}, rgba(10,12,18,0.92))`,
+          boxShadow: `inset 0 1px 0 0 ${cardTheme.inset}, 0 0 0 1px ${cardTheme.border}, 0 12px 24px -18px rgba(0,0,0,0.85), 0 0 22px -18px ${cardTheme.glow}`,
+          background: `linear-gradient(180deg, ${cardTheme.from}, ${cardTheme.to})`,
         }}
       >
         {parsed.colIndex === 3 && (
@@ -464,10 +546,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     className={`${cellBaseClass} ${theme.textClass} ${interactiveClass} cursor-pointer transition`}
                     style={{
                       borderColor: theme.border,
-                      background: `linear-gradient(180deg, ${theme.bg}, rgba(10,12,18,0.90))`,
+                      background: `linear-gradient(180deg, ${theme.from}, ${theme.to})`,
                       boxShadow: isActive
-                        ? `inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px ${theme.border}, 0 0 0 2px rgba(255,255,255,0.18), 0 0 26px -10px ${theme.glow}`
-                        : `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 10px 22px -12px rgba(0,0,0,0.8), 0 0 24px -16px ${theme.glow}`,
+                        ? `inset 0 1px 0 0 ${theme.inset}, 0 0 0 1px ${theme.border}, 0 0 0 2px rgba(255,255,255,0.16), 0 0 22px -10px ${theme.glow}`
+                        : `inset 0 1px 0 0 ${theme.inset}, 0 0 0 1px ${theme.border}, 0 10px 22px -14px rgba(0,0,0,0.8), 0 0 18px -16px ${theme.glow}`,
                     }}
                     onMouseEnter={() => {
                       if (!isTouchMode) {
