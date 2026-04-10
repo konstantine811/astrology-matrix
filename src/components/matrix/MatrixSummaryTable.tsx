@@ -209,6 +209,18 @@ const DEFAULT_THEME: CellTheme = {
   textClass: "text-slate-200",
 };
 
+const CELL_ACCENT_LINES: Record<string, string[]> = {
+  "1-0": ["#34d399"],
+  "1-1": ["#f472b6"],
+  "1-2": ["#fde68a"],
+  "2-0": ["#f472b6"],
+  "2-1": ["#34d399"],
+  "2-2": ["#fde68a"],
+  "2-3": ["#22d3ee"],
+  "3-0": ["#f472b6"],
+  "3-2": ["#312e81"],
+};
+
 function getEnergyByCellPosition(
   rowIndex: number,
   colIndex: number,
@@ -521,16 +533,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
               {row.map((cell, colIndex) => {
                 const isHiddenDescriptionCell =
                   rowIndex === 0 && colIndex === 3;
-                const parsedCell = parseMatrixCell(rowIndex, colIndex, cell);
-                const fallbackEnergy = getEnergyByCellPosition(
-                  rowIndex,
-                  colIndex,
-                );
-                const effectiveEnergy =
-                  parsedCell.energy !== null && parsedCell.energy !== undefined
-                    ? parsedCell.energy
-                    : fallbackEnergy;
-                const theme = getCellTheme(rowIndex, colIndex, effectiveEnergy);
+                const accentLines = CELL_ACCENT_LINES[`${rowIndex}-${colIndex}`] ?? [];
 
                 const isActive =
                   activeCell.rowIndex === rowIndex &&
@@ -543,13 +546,14 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                   <button
                     key={`${rowIndex}-${colIndex}`}
                     type="button"
-                    className={`${cellBaseClass} ${theme.textClass} ${interactiveClass} cursor-pointer transition`}
+                    className={`${cellBaseClass} text-slate-200 ${interactiveClass} cursor-pointer transition`}
                     style={{
-                      borderColor: theme.border,
-                      background: `linear-gradient(180deg, ${theme.from}, ${theme.to})`,
+                      borderColor: "rgba(255,255,255,0.06)",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
                       boxShadow: isActive
-                        ? `inset 0 1px 0 0 ${theme.inset}, 0 0 0 1px ${theme.border}, 0 0 0 2px rgba(255,255,255,0.16), 0 0 22px -10px ${theme.glow}`
-                        : `inset 0 1px 0 0 ${theme.inset}, 0 0 0 1px ${theme.border}, 0 10px 22px -14px rgba(0,0,0,0.8), 0 0 18px -16px ${theme.glow}`,
+                        ? "inset 0 1px 0 0 rgba(255,255,255,0.03), 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 2px rgba(255,255,255,0.16), 0 10px 22px -14px rgba(0,0,0,0.8)"
+                        : "inset 0 1px 0 0 rgba(255,255,255,0.02), 0 0 0 1px rgba(255,255,255,0.05), 0 10px 22px -14px rgba(0,0,0,0.8)",
                     }}
                     onMouseEnter={() => {
                       if (!isTouchMode) {
@@ -583,6 +587,20 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     }}
                     aria-label={`Ряд ${rowIndex + 1}, стовпець ${colIndex + 1}`}
                   >
+                    {accentLines.length > 0 && (
+                      <span className="pointer-events-none absolute top-2 left-1/2 flex -translate-x-1/2 items-center gap-1">
+                        {accentLines.map((color, idx) => (
+                          <span
+                            key={`${rowIndex}-${colIndex}-line-${idx}`}
+                            className="h-1.5 w-5 rounded-full"
+                            style={{
+                              backgroundColor: color,
+                              boxShadow: `0 0 8px ${color}66`,
+                            }}
+                          />
+                        ))}
+                      </span>
+                    )}
                     {cell}
                   </button>
                 );
