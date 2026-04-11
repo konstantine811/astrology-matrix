@@ -290,7 +290,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     y: 0,
   });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const detailCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 });
+  const getCellKey = (rowIndex: number, colIndex: number) =>
+    `${rowIndex}-${colIndex}`;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -404,6 +407,54 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
       effectiveEnergy !== null && effectiveEnergy !== undefined
         ? ENERGY_NORM_COUNT[effectiveEnergy]
         : undefined;
+    const isTopBaseCell = parsed.rowIndex === 0 && parsed.colIndex <= 2;
+
+    if (isTopBaseCell) {
+      const topBaseTitle =
+        parsed.colIndex === 0
+          ? "Шлях найменшого опору"
+          : parsed.colIndex === 2
+            ? "Верхній правий показник"
+            : "Архетип старту розвитку (0)";
+      const topBaseText =
+        parsed.colIndex === 0
+          ? "Це якісний базовий показник: те, що дається природно і легше за інше. Для цієї клітинки не застосовуються статуси «вище норми / нижче норми»."
+          : parsed.colIndex === 2
+            ? "Це окремий базовий показник верхнього правого кута. Він інтерпретується як якість (напрям), а не як кількісна «норма», тому статуси «вище / нижче норми» тут не використовуються."
+            : "Нуль у центрі верхнього ряду показує минулий досвід у циклі над системою: архетип, з якого суб'єкт починає розвиток, і готовність використати попередні накопичення.";
+      const zeroStateText =
+        parsed.colIndex !== 1
+          ? null
+          : parsed.mainCount > 0
+            ? "Нуль у основному полі присутній: є опора на вже накопичений досвід."
+            : parsed.bracketCount > 0
+              ? "Нуль проявлений у дужках: потенціал минулого досвіду є, але потребує свідомого включення."
+              : "Нуль явно не проявлений: тему опори на минулі накопичення варто розкривати через практику й усвідомлення пройденого досвіду.";
+
+      return (
+        <div
+          className={className}
+          style={{
+            borderColor: cardTheme.border,
+            boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.03), 0 0 0 1px ${cardTheme.border}, 0 12px 24px -18px rgba(0,0,0,0.85), 0 0 24px -16px ${cardTheme.glow}`,
+            background:
+              "linear-gradient(180deg, rgba(17,21,31,0.95), rgba(10,12,18,0.98))",
+          }}
+        >
+          <p className="text-sm font-semibold text-cyan-100">{topBaseTitle}</p>
+          <p className="mt-1 text-base font-medium text-white/90">
+            Значення: {parsed.rawValue || "—"}
+          </p>
+          <p className="mt-1 text-sm text-white/85">{topBaseText}</p>
+          {zeroStateText && (
+            <p className="mt-1 text-sm font-medium text-emerald-300">
+              {zeroStateText}
+            </p>
+          )}
+        </div>
+      );
+    }
+
     const status =
       count !== undefined ? getNormStatus(parsed.mainCount, count) : null;
     const statusLabel =
@@ -662,8 +713,19 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     }}
                     onFocus={() => setActiveCell({ rowIndex, colIndex })}
                     onClick={() => {
-                      if (!isTouchMode && !isHiddenDescriptionCell) {
-                        setActiveCell({ rowIndex, colIndex });
+                      if (isHiddenDescriptionCell) return;
+
+                      setActiveCell({ rowIndex, colIndex });
+
+                      const target = detailCardRefs.current[
+                        getCellKey(rowIndex, colIndex)
+                      ];
+
+                      if (target) {
+                        target.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
                       }
                     }}
                     aria-label={`Ряд ${rowIndex + 1}, стовпець ${colIndex + 1}`}
@@ -735,7 +797,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           Розбір усіх комірок
         </p>
         <div className="mt-3 space-y-2.5">
-          {parsedCellsForList.map((parsed, index) =>
+          {parsedCellsForList.map((parsed) =>
             (() => {
               const fallbackEnergy = getEnergyByCellPosition(
                 parsed.rowIndex,
@@ -753,9 +815,15 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
 
               return (
                 <div
-                  key={`${parsed.rowIndex}-${parsed.colIndex}-${index}`}
+                  key={getCellKey(parsed.rowIndex, parsed.colIndex)}
+                  ref={(node) => {
+                    detailCardRefs.current[
+                      getCellKey(parsed.rowIndex, parsed.colIndex)
+                    ] = node;
+                  }}
                   className="rounded-[20px] border p-2.5"
                   style={{
+                    scrollMarginTop: "12px",
                     borderColor: theme.border,
                     background: `linear-gradient(180deg, rgba(16,19,28,0.95), rgba(10,12,18,0.98))`,
                     boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(0,0,0,0.75), 0 0 24px -18px ${theme.glow}`,
