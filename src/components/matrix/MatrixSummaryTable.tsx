@@ -291,9 +291,30 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const detailCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const highlightTimeoutRef = useRef<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 });
+  const [highlightedDetailKey, setHighlightedDetailKey] = useState<
+    string | null
+  >(null);
   const getCellKey = (rowIndex: number, colIndex: number) =>
     `${rowIndex}-${colIndex}`;
+
+  const triggerDetailHighlight = (cellKey: string) => {
+    setHighlightedDetailKey(null);
+
+    requestAnimationFrame(() => {
+      setHighlightedDetailKey(cellKey);
+    });
+
+    if (highlightTimeoutRef.current) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedDetailKey(null);
+      highlightTimeoutRef.current = null;
+    }, 2200);
+  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -309,6 +330,15 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
       colIndex: Math.min(prev.colIndex, 3),
     }));
   }, [rows.length]);
+
+  useEffect(
+    () => () => {
+      if (highlightTimeoutRef.current) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const activeParsed = useMemo(() => {
     const row = rows[activeCell.rowIndex];
@@ -726,6 +756,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                           behavior: "smooth",
                           block: "start",
                         });
+                        triggerDetailHighlight(getCellKey(rowIndex, colIndex));
                       }
                     }}
                     aria-label={`Ряд ${rowIndex + 1}, стовпець ${colIndex + 1}`}
@@ -814,19 +845,29 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
               );
 
               return (
+                (() => {
+                  const cellKey = getCellKey(parsed.rowIndex, parsed.colIndex);
+                  const isHighlighted = highlightedDetailKey === cellKey;
+
+                  return (
                 <div
-                  key={getCellKey(parsed.rowIndex, parsed.colIndex)}
+                  key={cellKey}
                   ref={(node) => {
-                    detailCardRefs.current[
-                      getCellKey(parsed.rowIndex, parsed.colIndex)
-                    ] = node;
+                    detailCardRefs.current[cellKey] = node;
                   }}
-                  className="rounded-[20px] border p-2.5"
+                  className={`rounded-[20px] border p-2.5 transition-[box-shadow,border-color,transform] duration-500 ${
+                    isHighlighted ? "animate-[pulse_1s_ease-in-out_2]" : ""
+                  }`}
                   style={{
                     scrollMarginTop: "12px",
-                    borderColor: theme.border,
+                    borderColor: isHighlighted
+                      ? "rgba(94, 234, 212, 0.85)"
+                      : theme.border,
                     background: `linear-gradient(180deg, rgba(16,19,28,0.95), rgba(10,12,18,0.98))`,
-                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(0,0,0,0.75), 0 0 24px -18px ${theme.glow}`,
+                    transform: isHighlighted ? "translateY(-1px)" : "none",
+                    boxShadow: isHighlighted
+                      ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(94,234,212,0.55), 0 0 0 2px rgba(45,212,191,0.4), 0 16px 34px -14px rgba(0,0,0,0.75), 0 0 42px -10px rgba(45,212,191,0.7)`
+                      : `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(0,0,0,0.75), 0 0 24px -18px ${theme.glow}`,
                   }}
                 >
                   <p className="text-[16px] font-semibold leading-snug text-slate-100/95">
@@ -841,6 +882,8 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     "mt-2.5 rounded-[16px] border p-2.5",
                   )}
                 </div>
+                  );
+                })()
               );
             })(),
           )}
