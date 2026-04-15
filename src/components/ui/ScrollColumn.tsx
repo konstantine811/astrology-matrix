@@ -5,6 +5,7 @@ type ScrollColumnProps = {
   selectedIndex: number
   onChange: (nextIndex: number) => void
   wrapAround?: boolean
+  theme?: 'light' | 'dark'
 }
 
 const ITEM_HEIGHT = 48
@@ -13,7 +14,13 @@ function normalizeIndex(index: number, length: number): number {
   return ((index % length) + length) % length
 }
 
-export function ScrollColumn({ items, selectedIndex, onChange, wrapAround = false }: ScrollColumnProps) {
+export function ScrollColumn({
+  items,
+  selectedIndex,
+  onChange,
+  wrapAround = false,
+  theme = 'dark',
+}: ScrollColumnProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const syncingRef = useRef(false)
@@ -109,8 +116,12 @@ export function ScrollColumn({ items, selectedIndex, onChange, wrapAround = fals
             <span
               className={`transition-all duration-300 ${
                 isSelected
-                  ? 'scale-110 text-xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]'
-                  : 'scale-90 text-base font-medium text-white/30 hover:text-white/50'
+                  ? theme === 'dark'
+                    ? 'scale-110 text-xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]'
+                    : 'scale-110 text-xl font-bold text-slate-900 drop-shadow-[0_0_8px_rgba(15,23,42,0.12)]'
+                  : theme === 'dark'
+                    ? 'scale-90 text-base font-medium text-white/30 hover:text-white/50'
+                    : 'scale-90 text-base font-medium text-slate-500/60 hover:text-slate-700/80'
               }`}
             >
               {item}
