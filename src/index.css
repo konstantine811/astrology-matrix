@@ -11,33 +11,8 @@ body {
   font-family: "Inter", sans-serif;
   margin: 0;
   min-height: 100vh;
-  background-color: #f3f6ff;
-  background-image:
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(255, 255, 255, 0.95) 0%,
-      rgba(236, 244, 255, 0.98) 55%,
-      rgba(224, 236, 255, 1) 100%
-    ),
-    linear-gradient(180deg, #f7faff 0%, #e7eefc 100%);
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  color: #0f172a;
-}
-
-html[data-theme="dark"] body {
   background-color: #030712;
-  background-image:
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(0, 0, 0, 0.95) 0%,
-      rgba(8, 6, 26, 0.98) 55%,
-      rgba(2, 4, 10, 1) 100%
-    ),
-    linear-gradient(180deg, #040814 0%, #575757 100%);
-  color: #fff;
+  color: #0f172a;
 }
 
 #root {
@@ -162,43 +137,4 @@ html[data-theme="dark"] .matrix-day-picker .rdp-dropdown {
 html[data-theme="dark"] .matrix-day-picker .rdp-dropdown option {
   background: #0e1017;
   color: #fff;
-}
-
-@keyframes star-warp {
-  0% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0)
-      scale(0.18);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.95;
-  }
-  78% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(var(--angle))
-      translateX(var(--travel)) scale(1.6);
-    opacity: 0;
-  }
-}
-
-.warp-star {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--star-size) * 14);
-  height: var(--star-size);
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0),
-    rgba(180, 214, 255, 0.95),
-    rgba(255, 255, 255, 1)
-  );
-  transform-origin: left center;
-  filter: drop-shadow(0 0 5px rgba(179, 210, 255, 0.8));
-  animation: star-warp linear infinite;
-  pointer-events: none;
-  z-index: 0;
 }

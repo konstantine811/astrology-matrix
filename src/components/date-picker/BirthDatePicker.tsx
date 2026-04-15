@@ -73,10 +73,10 @@ export function BirthDatePicker({
       className={`relative mb-4 flex w-full select-none justify-center rounded-3xl`}
     >
       <div
-        className={`pointer-events-none absolute top-1/2 left-4 right-4 h-12 -translate-y-6 rounded-xl border ${
+        className={`pointer-events-none absolute top-1/2 left-4 right-4 h-12 -translate-y-6 rounded-xl border border-white/10 bg-white/4 ${
           isDark
             ? "border-white/10 bg-white/4"
-            : "border-slate-500/15 bg-white/70"
+            : "border-slate-500/15 bg-white/4"
         }`}
       />
 
@@ -104,11 +104,7 @@ export function BirthDatePicker({
           <Popover.Trigger asChild>
             <button
               type="button"
-              className={`h-11 w-11 shrink-0 rounded-xl border transition ${
-                isDark
-                  ? "border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-                  : "border-slate-500/20 bg-white/80 text-slate-700 hover:bg-white hover:text-slate-900"
-              }`}
+              className={`h-11 w-11 shrink-0 rounded-xl border transition`}
               aria-label="Обрати дату з календаря"
             >
               <CalendarIcon className="mx-auto h-5 w-5" />

@@ -9,16 +9,63 @@ import {
   createDayOptions,
   createYearOptions,
 } from "./constants/date";
-import { buildMatrixModelTable } from "./utils/modelTable";
+import { ENERGY_NORM_COUNT, ENERGY_PROFILES } from "./data/energyNorms";
+import { buildMatrixModelTable, parseMatrixCell } from "./utils/modelTable";
 // import { calculateDestinyMatrix } from "./utils/matrix";
 
 type ThemeMode = "light" | "dark";
+type LiquidPalette = {
+  deep: string;
+  mid: string;
+  highlight: string;
+  intensity: number;
+};
+
+const PLANET_COLOR_BY_NAME: Record<string, string> = {
+  Сонце: "#f97316",
+  Місяць: "#60a5fa",
+  Меркурій: "#d946ef",
+  Венера: "#fde047",
+  Марс: "#ef4444",
+  Юпітер: "#fb7185",
+  Сатурн: "#f59e0b",
+  Уран: "#22d3ee",
+  Нептун: "#8b5cf6",
+  Плутон: "#ec4899",
+  Прозерпіна: "#a78bfa",
+  Вулкан: "#f97316",
+};
+
+function hexToRgb(hex: string): [number, number, number] {
+  const normalized = hex.replace("#", "");
+  return [
+    parseInt(normalized.slice(0, 2), 16),
+    parseInt(normalized.slice(2, 4), 16),
+    parseInt(normalized.slice(4, 6), 16),
+  ];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  return `#${clamp(r).toString(16).padStart(2, "0")}${clamp(g)
+    .toString(16)
+    .padStart(2, "0")}${clamp(b).toString(16).padStart(2, "0")}`;
+}
+
+function mixHex(colorA: string, colorB: string, ratio: number): string {
+  const [ar, ag, ab] = hexToRgb(colorA);
+  const [br, bg, bb] = hexToRgb(colorB);
+  const t = Math.max(0, Math.min(1, ratio));
+  return rgbToHex(ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t);
+}
 
 function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") return "light";
     const savedTheme = window.localStorage.getItem("metasense-theme");
-    return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
+    return savedTheme === "dark" || savedTheme === "light"
+      ? savedTheme
+      : "light";
   });
   const years = useMemo(() => createYearOptions(100), []);
   const defaultYearIndex = useMemo(() => {
@@ -89,6 +136,59 @@ function App() {
     [debouncedBirthDate.day, debouncedBirthDate.month, debouncedBirthDate.year],
   );
 
+  const liquidPalette = useMemo<LiquidPalette>(() => {
+    const energyWeights = new Map<number, number>();
+
+    modelTable.rows.forEach((row, rowIndex) => {
+      row.forEach((value, colIndex) => {
+        if (colIndex >= 3 || rowIndex === 0) return;
+
+        const parsed = parseMatrixCell(rowIndex, colIndex, value);
+        if (!parsed.energy || parsed.energy < 1 || parsed.energy > 12) return;
+
+        const totalCount = parsed.mainCount + parsed.bracketCount;
+        if (totalCount <= 0) return;
+
+        const norm = ENERGY_NORM_COUNT[parsed.energy] ?? 1;
+        const normalizedWeight = totalCount / Math.max(norm, 1);
+        energyWeights.set(parsed.energy, normalizedWeight);
+      });
+    });
+
+    const ranked = [...energyWeights.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    const getPlanetColorByEnergy = (energy: number): string => {
+      const profile = ENERGY_PROFILES[energy];
+      return profile
+        ? (PLANET_COLOR_BY_NAME[profile.planet] ?? "#60a5fa")
+        : "#60a5fa";
+    };
+
+    const base: LiquidPalette = {
+      deep: "#04050b",
+      mid: "#134d93",
+      highlight: "#8cecff",
+      intensity: 1,
+    };
+
+    if (ranked.length === 0) return base;
+
+    const c1 = getPlanetColorByEnergy(ranked[0][0]);
+    const c2 = getPlanetColorByEnergy(ranked[1]?.[0] ?? ranked[0][0]);
+    const c3 = getPlanetColorByEnergy(ranked[2]?.[0] ?? ranked[0][0]);
+    const maxWeight = ranked[0]?.[1] ?? 1;
+    const intensity = Math.max(0.7, Math.min(1.35, 0.72 + maxWeight * 0.2));
+
+    return {
+      deep: mixHex("#02030a", c1, 0.38),
+      mid: mixHex("#0a1f4d", c2, 0.58),
+      highlight: mixHex("#7dd3fc", c3, 0.66),
+      intensity,
+    };
+  }, [modelTable.rows]);
+
   const handleDateSelect = (date: Date) => {
     const nextYearIndex = years.indexOf(String(date.getFullYear()));
     if (nextYearIndex >= 0) {
@@ -109,20 +209,26 @@ function App() {
         theme === "dark" ? "text-white" : "text-slate-900"
       }`}
     >
-      <Particles />
+      <Particles palette={liquidPalette} />
 
       <div className="relative z-10 flex w-full flex-col items-center">
         <div className="fixed top-3 right-3 z-[100]">
           <button
             type="button"
-            onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+            onClick={() =>
+              setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+            }
             className={`flex h-10 w-10 items-center justify-center rounded-full border text-lg shadow-md backdrop-blur transition hover:scale-105 ${
               theme === "dark"
                 ? "border-white/30 bg-black/40"
                 : "border-slate-300 bg-white/80"
             }`}
             aria-label="Перемкнути тему"
-            title={theme === "dark" ? "Увімкнути світлу тему" : "Увімкнути темну тему"}
+            title={
+              theme === "dark"
+                ? "Увімкнути світлу тему"
+                : "Увімкнути темну тему"
+            }
           >
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
@@ -135,7 +241,8 @@ function App() {
               : "bg-linear-to-b from-slate-900 to-slate-600"
           }`}
         >
-          <span className="font-bold text-indigo-400">MetaSense</span> - Твоє призначення
+          <span className="font-bold text-indigo-400">MetaSense</span> - Твоє
+          призначення
         </h1>
 
         <div className="w-full backdrop-blur-[1px]">
@@ -155,7 +262,9 @@ function App() {
               <MatrixDiagram matrix={matrixData} />
             </div> */}
 
-            <div className="max-w-sm w-full flex justify-center items-center">
+            <div
+              className={`max-w-sm w-full flex justify-center items-center backdrop-blur-sm rounded-2xl ${theme === "dark" ? "bg-black/50" : "bg-white/50"}`}
+            >
               <BirthDatePicker
                 months={MONTHS_UA}
                 days={days}
@@ -172,11 +281,13 @@ function App() {
               />
             </div>
             <div
-              className={`mt-2 mb-2 flex w-full max-w-3xl flex-row items-center justify-center gap-4 px-4 text-center text-lg font-semibold tracking-wide sm:text-2xl ${
+              className={`mt-2 mb-2 flex w-full max-w-3xl flex-row items-center justify-center gap-4 px-4 text-center text-lg font-semibold tracking-wide sm:text-2xl backdrop-blur-md bg-white/30 rounded-2xl ${
                 theme === "dark" ? "text-white" : "text-slate-900"
               }`}
             >
-              <span className={`text-xs ${theme === "dark" ? "text-indigo-300" : "text-indigo-700"}`}>
+              <span
+                className={`text-xs ${theme === "dark" ? "text-indigo-300" : "text-indigo-700"}`}
+              >
                 {modelTable.calcLine.day}.{modelTable.calcLine.month}.
                 {modelTable.calcLine.year}
               </span>
@@ -188,7 +299,7 @@ function App() {
               {modelTable.calcLine.calc6})
             </div>
             <div className="max-w-3xl w-full flex justify-center items-center  relative z-50">
-              <MatrixSummaryTable rows={modelTable.rows} theme={theme} />
+              <MatrixSummaryTable rows={modelTable.rows} theme={theme} cellOpacity={50} />
             </div>
           </div>
         </div>

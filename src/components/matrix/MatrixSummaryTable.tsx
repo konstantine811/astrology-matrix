@@ -24,6 +24,7 @@ import {
 type MatrixSummaryTableProps = {
   rows: MatrixModelTableRow[];
   theme?: "light" | "dark";
+  cellOpacity?: number;
 };
 
 const cellBaseClass =
@@ -273,8 +274,11 @@ function getCellTheme(
 export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   rows,
   theme = "dark",
+  cellOpacity = 50,
 }: MatrixSummaryTableProps) {
   const isDark = theme === "dark";
+  const normalizedCellOpacity = Math.max(0, Math.min(100, cellOpacity));
+  const alpha = normalizedCellOpacity / 100;
   const [isTouchMode, setIsTouchMode] = useState(false);
   const [activeCell, setActiveCell] = useState<{
     rowIndex: number;
@@ -738,8 +742,8 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     <div
       className={`relative mb-3 w-full rounded-xl border backdrop-blur-md md:rounded-[32px] pt-1 ${
         isDark
-          ? "border-white/[0.03] bg-[#0A0C10]/1 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.02)]"
-          : "border-slate-300/60 bg-white/7 shadow-[0_20px_50px_-20px_rgba(15,23,42,0.28),inset_0_0_50px_rgba(56,189,248,0.05)]"
+          ? "border-white/25 bg-[#0A0C10]/10 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.05)]"
+          : "border-slate-300/60 bg-white/10 shadow-[0_20px_50px_-20px_rgba(15,23,42,0.28),inset_0_0_50px_rgba(56,189,248,0.08)]"
       }`}
     >
       <div
@@ -753,9 +757,14 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
               key={label}
               className={`rounded-sm border px-2 py-2 text-center text-[6px] font-semibold tracking-widest uppercase text-pretty sm:text-[11px] md:rounded-full md:text-[10px] ${
                 isDark
-                  ? "border-white/[0.03] bg-[#12141A] text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-                  : "border-sky-200/90 bg-linear-to-b from-sky-50 to-blue-50 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.98)]"
+                  ? "border-white/25 text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                  : "border-sky-200/80 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
               }`}
+              style={{
+                backgroundColor: isDark
+                  ? `rgba(18,20,26,${alpha})`
+                  : `rgba(240,249,255,${alpha})`,
+              }}
             >
               {label}
             </div>
@@ -772,9 +781,14 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
             <div
               className={`rounded-[18px] border px-2 py-2 ${
                 isDark
-                  ? "border-white/[0.03] bg-[#0E1016] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
-                  : "border-sky-200/90 bg-linear-to-b from-sky-50 to-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.98)]"
+                  ? "border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                  : "border-sky-200/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
               }`}
+              style={{
+                backgroundColor: isDark
+                  ? `rgba(14,16,22,${alpha})`
+                  : `rgba(240,249,255,${alpha})`,
+              }}
             >
               <p
                 className={`text-[9px] leading-tight md:text-[11px] ${isDark ? "text-slate-300/90" : "text-slate-800"}`}
@@ -815,17 +829,17 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                     className={`${cellBaseClass} ${isDark ? "text-slate-200" : "text-slate-800"} ${interactiveClass} cursor-pointer transition`}
                     style={{
                       borderColor: isDark
-                        ? "rgba(255,255,255,0.06)"
+                        ? "rgba(255,255,255,0.25)"
                         : "rgba(148,163,184,0.35)",
                       background: isDark
-                        ? "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))"
-                        : "linear-gradient(180deg, rgba(255,255,255,1), rgba(252,253,255,1))",
+                        ? `linear-gradient(180deg, rgba(255,255,255,${alpha}), rgba(255,255,255,${alpha}))`
+                        : `linear-gradient(180deg, rgba(255,255,255,${alpha}), rgba(255,255,255,${alpha}))`,
                       boxShadow: isActive
                         ? isDark
-                          ? "inset 0 1px 0 0 rgba(255,255,255,0.03), 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 2px rgba(255,255,255,0.16), 0 10px 22px -14px rgba(0,0,0,0.8)"
+                          ? "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(255,255,255,0.22), 0 0 0 2px rgba(255,255,255,0.2), 0 10px 22px -14px rgba(0,0,0,0.8)"
                           : "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(100,116,139,0.45), 0 0 0 2px rgba(30,41,59,0.3), 0 8px 18px -12px rgba(15,23,42,0.28)"
                         : isDark
-                          ? "inset 0 1px 0 0 rgba(255,255,255,0.02), 0 0 0 1px rgba(255,255,255,0.05), 0 10px 22px -14px rgba(0,0,0,0.8)"
+                          ? "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,255,255,0.18), 0 10px 22px -14px rgba(0,0,0,0.8)"
                           : "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(148,163,184,0.4), 0 8px 18px -12px rgba(15,23,42,0.2)",
                     }}
                     onMouseEnter={() => {
