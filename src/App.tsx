@@ -73,6 +73,7 @@ const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
 };
 const MATRIX_CELL_OPACITY = 0.5;
 const BIRTH_DATE_STORAGE_KEY = "metasense-birth-date";
+type BackgroundMode = "planets" | "colors";
 
 function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -131,6 +132,8 @@ function App() {
   const [yearIndex, setYearIndex] = useState(initialBirthSelection.yearIndex);
   const [dayIndex, setDayIndex] = useState(initialBirthSelection.dayIndex);
   const [activeMainTab, setActiveMainTab] = useState<MainTabKey>("matrix");
+  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>("planets");
+  const [calculatorOnly, setCalculatorOnly] = useState(false);
   const fxProfile: FxProfileMode = "balanced";
   const [fxBurstToken, setFxBurstToken] = useState(0);
   const isFirstDatePersistRender = useRef(true);
@@ -422,11 +425,63 @@ function App() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 sm:py-6">
-      <Particles fx={backgroundFx} burstToken={fxBurstToken} />
+    <div
+      className={
+        calculatorOnly
+          ? "relative flex min-h-screen flex-col items-center justify-start overflow-hidden pt-20 pb-4 sm:pt-24 sm:pb-6"
+          : "relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 sm:py-6"
+      }
+    >
+      <Particles
+        fx={backgroundFx}
+        burstToken={fxBurstToken}
+        showPlanets={backgroundMode === "planets"}
+      />
 
       <div className="relative z-10 flex w-full flex-col items-center">
         <div className="fixed top-3 right-3 z-[100] flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setBackgroundMode((prev) =>
+                prev === "planets" ? "colors" : "planets",
+              )
+            }
+            className="flex h-10 items-center justify-center rounded-full border px-3 text-xs font-semibold shadow-md backdrop-blur transition hover:scale-105"
+            style={{
+              borderColor: ui.border,
+              background: ui.overlayButton,
+              color: ui.text,
+              boxShadow: ui.shadowSoft,
+            }}
+            aria-label="Перемкнути режим фону"
+            title={
+              backgroundMode === "planets"
+                ? "Зараз: фон з планетами"
+                : "Зараз: тільки кольоровий фон"
+            }
+          >
+            {backgroundMode === "planets" ? "🪐 Планети" : "🎨 Кольори"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCalculatorOnly((prev) => !prev)}
+            className="flex h-10 items-center justify-center rounded-full border px-3 text-xs font-semibold shadow-md backdrop-blur transition hover:scale-105"
+            style={{
+              borderColor: ui.border,
+              background: ui.overlayButton,
+              color: ui.text,
+              boxShadow: ui.shadowSoft,
+            }}
+            aria-label="Показати лише калькулятор"
+            title={
+              calculatorOnly
+                ? "Показувати весь контент"
+                : "Показувати лише калькулятор"
+            }
+          >
+            {calculatorOnly ? "📄 Усе" : "🎯 Калькулятор"}
+          </button>
           <button
             type="button"
             onClick={() =>
@@ -465,7 +520,13 @@ function App() {
         </h1>
 
         <div className="w-full">
-          <div className="mb-4 w-full flex flex-col items-center justify-center">
+          <div
+            className={
+              calculatorOnly
+                ? "mb-4 w-full flex flex-col items-center justify-start"
+                : "mb-4 w-full flex flex-col items-center justify-center"
+            }
+          >
             <div className="mb-3 flex items-center justify-center gap-2">
               <span className="text-indigo-300">✧</span>
               <span className="text-xs font-medium tracking-widest uppercase text-[var(--ui-accent)]">
@@ -480,9 +541,9 @@ function App() {
             <div
               className="max-w-sm w-full flex justify-center items-center rounded-2xl backdrop-blur-md"
               style={{
-                background: ui.surfaceSoft,
+                background: calculatorOnly ? "rgba(12, 20, 36, 0.28)" : ui.surfaceSoft,
                 border: `1px solid ${ui.border}`,
-                boxShadow: ui.shadowSoft,
+                boxShadow: calculatorOnly ? "none" : ui.shadowSoft,
               }}
             >
               <BirthDatePicker
@@ -504,9 +565,9 @@ function App() {
               className="mt-2 mb-2 flex flex-row items-center justify-center gap-4 rounded-2xl px-4 text-center text-lg font-semibold tracking-wide backdrop-blur-md sm:text-2xl"
               style={{
                 color: ui.text,
-                background: ui.surfaceSoft,
+                background: calculatorOnly ? "rgba(12, 20, 36, 0.3)" : ui.surfaceSoft,
                 border: `1px solid ${ui.border}`,
-                boxShadow: ui.shadowSoft,
+                boxShadow: calculatorOnly ? "none" : ui.shadowSoft,
               }}
             >
               <span className="text-xs text-[var(--ui-accent)]">
@@ -520,27 +581,31 @@ function App() {
               ({modelTable.calcLine.calc5}
               {modelTable.calcLine.calc6})
             </div>
-            <PlanetLegendBar ui={ui} items={planetLegend} />
-            <MainTabs
-              ui={ui}
-              activeTab={activeMainTab}
-              onChange={setActiveMainTab}
-            />
-            <div className="max-w-3xl w-full flex justify-center items-center relative z-50">
-              {activeMainTab === "matrix" && (
-                <MatrixSummaryTable
-                  rows={modelTable.rows}
-                  theme={theme}
-                  cellOpacity={MATRIX_CELL_OPACITY * 100}
+            {!calculatorOnly && (
+              <>
+                <PlanetLegendBar ui={ui} items={planetLegend} />
+                <MainTabs
+                  ui={ui}
+                  activeTab={activeMainTab}
+                  onChange={setActiveMainTab}
                 />
-              )}
-              {activeMainTab === "potential" && (
-                <PotentialTabContent ui={ui} items={potentialItems} />
-              )}
-              {activeMainTab === "today" && (
-                <TodayTabContent ui={ui} dailyInsights={dailyInsights} />
-              )}
-            </div>
+                <div className="max-w-3xl w-full flex justify-center items-center relative z-50">
+                  {activeMainTab === "matrix" && (
+                    <MatrixSummaryTable
+                      rows={modelTable.rows}
+                      theme={theme}
+                      cellOpacity={MATRIX_CELL_OPACITY * 100}
+                    />
+                  )}
+                  {activeMainTab === "potential" && (
+                    <PotentialTabContent ui={ui} items={potentialItems} />
+                  )}
+                  {activeMainTab === "today" && (
+                    <TodayTabContent ui={ui} dailyInsights={dailyInsights} />
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

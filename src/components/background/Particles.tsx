@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
+import { Html, Stars } from "@react-three/drei";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -39,6 +40,7 @@ type BackgroundFxModel = {
 type ParticlesProps = {
   fx: BackgroundFxModel;
   burstToken?: number;
+  showPlanets?: boolean;
 };
 
 type CosmicPlanetNode = {
@@ -243,15 +245,37 @@ function CosmicPlanet({
           metalness={0.04}
         />
       </mesh>
+      <Html
+        position={[0, node.size + 0.42, 0]}
+        center
+        transform
+        sprite
+        distanceFactor={14}
+        style={{ pointerEvents: "none" }}
+      >
+        <div
+          style={{
+            fontSize: "7px",
+            fontWeight: 400,
+            color: "rgba(244, 247, 255, 0.95)",
+            padding: "0px 5px",
+            borderRadius: "5px",
+            border: "0.5px solid rgba(255, 255, 255, 0.15)",
+            background: "rgba(0, 0, 0, 0.15)",
+            backdropFilter: "blur(2px)",
+            whiteSpace: "nowrap",
+            textShadow: "0 0 10px rgba(0, 0, 0, 0.55)",
+            letterSpacing: "0.2px",
+          }}
+        >
+          {node.planet}
+        </div>
+      </Html>
     </group>
   );
 }
 
-function CosmicSkyScene({
-  planets,
-}: {
-  planets: CosmicPlanetNode[];
-}) {
+function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
   const coreSunTexture = useLoader(THREE.TextureLoader, PLANET_TEXTURES.Сонце);
   const textureUrls = useMemo(
     () => planets.map((planet) => planet.texturePath),
@@ -286,11 +310,12 @@ function CosmicSkyScene({
         <sphereGeometry args={[1.5, 40, 40]} />
         <meshStandardMaterial
           map={coreSunTexture}
-          color="#fff0a8"
+          color="#ffffff"
           emissive="#ffc25c"
-          emissiveIntensity={0.85}
-          roughness={0.45}
+          emissiveIntensity={1.8}
+          roughness={0.38}
           metalness={0.02}
+          toneMapped={false}
         />
       </mesh>
 
@@ -311,11 +336,26 @@ function CosmicSkyScene({
         fade
         speed={0.1}
       />
+
+      <EffectComposer multisampling={0}>
+        <Bloom
+          intensity={2.62}
+          luminanceThreshold={0.9}
+          luminanceSmoothing={1.02}
+          mipmapBlur
+          radius={0.42}
+        />
+      </EffectComposer>
     </>
   );
 }
 
-export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
+export function Particles({
+  fx,
+  burstToken = 0,
+  showPlanets = true,
+}: ParticlesProps) {
+  const colorOnlyMode = !showPlanets;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const haloRef = useRef<HTMLDivElement | null>(null);
@@ -328,9 +368,13 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
   const baseFlowStrength = useMemo(() => {
     const avgWeight =
       fx.layers.length > 0
-        ? fx.layers.reduce((acc, layer) => acc + layer.weight, 0) / fx.layers.length
+        ? fx.layers.reduce((acc, layer) => acc + layer.weight, 0) /
+          fx.layers.length
         : 0;
-    return Math.max(0.9, Math.min(2.5, 0.85 + avgWeight * 0.7 + fx.bracketField * 0.08));
+    return Math.max(
+      0.9,
+      Math.min(2.5, 0.85 + avgWeight * 0.7 + fx.bracketField * 0.08),
+    );
   }, [fx]);
 
   useEffect(() => {
@@ -439,26 +483,35 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
     const deepBase = hexToRgb01(fx.dominantColor);
     const midBase = hexToRgb01(fx.secondaryColor);
     const highlightBase = hexToRgb01(fx.tertiaryColor);
+    const deepMix = colorOnlyMode ? 0.42 : 0.18;
+    const midMix = colorOnlyMode ? 0.5 : 0.24;
+    const highMix = colorOnlyMode ? 0.6 : 0.3;
+    const deepBias = colorOnlyMode ? 0.1 : 0.03;
+    const midBias = colorOnlyMode ? 0.13 : 0.04;
+    const highBias = colorOnlyMode ? 0.16 : 0.05;
     const deep: [number, number, number] = [
-      deepBase[0] * 0.18 + 0.03,
-      deepBase[1] * 0.18 + 0.04,
-      deepBase[2] * 0.2 + 0.08,
+      deepBase[0] * deepMix + deepBias,
+      deepBase[1] * deepMix + deepBias,
+      deepBase[2] * (deepMix + 0.02) + (deepBias + 0.05),
     ];
     const mid: [number, number, number] = [
-      midBase[0] * 0.24 + 0.04,
-      midBase[1] * 0.24 + 0.05,
-      midBase[2] * 0.28 + 0.1,
+      midBase[0] * midMix + midBias,
+      midBase[1] * midMix + (midBias + 0.01),
+      midBase[2] * (midMix + 0.02) + (midBias + 0.06),
     ];
     const highlight: [number, number, number] = [
-      highlightBase[0] * 0.3 + 0.05,
-      highlightBase[1] * 0.3 + 0.06,
-      highlightBase[2] * 0.34 + 0.12,
+      highlightBase[0] * highMix + highBias,
+      highlightBase[1] * highMix + (highBias + 0.01),
+      highlightBase[2] * (highMix + 0.02) + (highBias + 0.07),
     ];
 
     let rafId = 0;
     const render = (now: number) => {
       const t = now / 1000;
-      const motionSpeed = Math.max(0.08, fx.speedPulse * BACKGROUND_SPEED_MULTIPLIER);
+      const motionSpeed = Math.max(
+        0.08,
+        fx.speedPulse * BACKGROUND_SPEED_MULTIPLIER,
+      );
 
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -469,9 +522,17 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
       gl.uniform3f(uColorHighlight, highlight[0], highlight[1], highlight[2]);
       gl.uniform1f(uSpeed, motionSpeed);
       gl.uniform1f(uFlowStrength, baseFlowStrength);
-      gl.uniform1f(uGrain, Math.max(0.01, fx.grain * 0.45));
-      gl.uniform1f(uContrast, Math.max(0.86, Math.min(1.08, fx.contrast * 0.68)));
-      gl.uniform1f(uOpacity, 0.38);
+      gl.uniform1f(
+        uGrain,
+        Math.max(0.01, fx.grain * (colorOnlyMode ? 0.62 : 0.45)),
+      );
+      gl.uniform1f(
+        uContrast,
+        colorOnlyMode
+          ? Math.max(0.95, Math.min(1.2, fx.contrast * 0.9))
+          : Math.max(0.86, Math.min(1.08, fx.contrast * 0.68)),
+      );
+      gl.uniform1f(uOpacity, colorOnlyMode ? 0.62 : 0.38);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
       for (const layer of fx.layers) {
@@ -481,7 +542,10 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
           const speed = motionSpeed * (0.9 + layer.weight * 0.35);
           const y = computeUpwardOffset(t, seed, speed * 42, 420);
           const scale = 0.9 + layer.weight * 0.42;
-          const opacity = Math.max(0.08, Math.min(0.24, 0.08 + layer.weight * 0.12));
+          const opacity = Math.max(
+            0.08,
+            Math.min(0.24, 0.08 + layer.weight * 0.12),
+          );
           layerEl.style.transform = `translate3d(0px, ${y}px, 0) scale(${scale})`;
           layerEl.style.opacity = `${opacity}`;
         }
@@ -492,7 +556,10 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
           const speed = motionSpeed * (0.52 + layer.bracketWeight * 0.22);
           const y = computeUpwardOffset(t * 0.8, seed, speed * 30, 300);
           const scale = 0.92 + layer.bracketWeight * 0.48;
-          const opacity = Math.max(0.04, Math.min(0.16, 0.04 + layer.bracketWeight * 0.1));
+          const opacity = Math.max(
+            0.04,
+            Math.min(0.16, 0.04 + layer.bracketWeight * 0.1),
+          );
           bracketEl.style.transform = `translate3d(0px, ${y}px, 0) scale(${scale})`;
           bracketEl.style.opacity = `${opacity}`;
         }
@@ -526,7 +593,7 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
     };
-  }, [baseFlowStrength, fx, hasWebGLError]);
+  }, [baseFlowStrength, colorOnlyMode, fx, hasWebGLError]);
 
   const layerStyleBase = useMemo(
     () =>
@@ -562,81 +629,78 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
     [fx.layers],
   );
 
-  const planetColorOrbs = useMemo(
-    () => {
-      const aggregated = Array.from(
-        fx.layers
-          .reduce((acc, layer) => {
-            const key = layer.planet ?? layer.color;
-            const current = acc.get(key) ?? {
-              key,
-              color: layer.color,
-              weight: 0,
-            };
-            current.weight += layer.weight + layer.bracketWeight * 0.55;
-            acc.set(key, current);
-            return acc;
-          }, new Map<string, { key: string; color: string; weight: number }>())
-          .values(),
-      );
+  const planetColorOrbs = useMemo(() => {
+    const aggregated = Array.from(
+      fx.layers
+        .reduce((acc, layer) => {
+          const key = layer.planet ?? layer.color;
+          const current = acc.get(key) ?? {
+            key,
+            color: layer.color,
+            weight: 0,
+          };
+          current.weight += layer.weight + layer.bracketWeight * 0.55;
+          acc.set(key, current);
+          return acc;
+        }, new Map<string, { key: string; color: string; weight: number }>())
+        .values(),
+    );
 
-      if (aggregated.length === 0) return [];
+    if (aggregated.length === 0) return [];
 
-      const totalWeight = Math.max(
-        0.0001,
-        aggregated.reduce((sum, item) => sum + item.weight, 0),
-      );
+    const totalWeight = Math.max(
+      0.0001,
+      aggregated.reduce((sum, item) => sum + item.weight, 0),
+    );
 
-      const visualized = aggregated.map((item) => ({
-        ...item,
-        share: item.weight / totalWeight,
-      }));
+    const visualized = aggregated.map((item) => ({
+      ...item,
+      share: item.weight / totalWeight,
+    }));
 
-      const withFloor = visualized.map((item) => ({
-        ...item,
-        visualShare: Math.max(MIN_COLOR_SHARE, item.share),
-      }));
-      const visualSum = Math.max(
-        0.0001,
-        withFloor.reduce((sum, item) => sum + item.visualShare, 0),
-      );
+    const withFloor = visualized.map((item) => ({
+      ...item,
+      visualShare: Math.max(MIN_COLOR_SHARE, item.share),
+    }));
+    const visualSum = Math.max(
+      0.0001,
+      withFloor.reduce((sum, item) => sum + item.visualShare, 0),
+    );
 
-      return withFloor.map((item, idx, arr) => {
-        const seedX = seeded(`${item.key}-orb-x`);
-        const seedY = seeded(`${item.key}-orb-y`);
-        const spread = arr.length > 0 ? idx / arr.length : 0;
-        const normalizedShare = item.visualShare / visualSum;
+    return withFloor.map((item, idx, arr) => {
+      const seedX = seeded(`${item.key}-orb-x`);
+      const seedY = seeded(`${item.key}-orb-y`);
+      const spread = arr.length > 0 ? idx / arr.length : 0;
+      const normalizedShare = item.visualShare / visualSum;
 
-        const size = 18 + normalizedShare * 78;
-        const opacity = Math.min(0.42, 0.1 + normalizedShare * 0.28);
-        const alphaCore = Math.min(0.24, 0.05 + normalizedShare * 0.18);
-        const alphaMid = Math.min(0.15, 0.02 + normalizedShare * 0.11);
-        const blurPx = Math.max(24, 44 - normalizedShare * 10);
+      const size = 18 + normalizedShare * 78;
+      const opacity = Math.min(0.42, 0.1 + normalizedShare * 0.28);
+      const alphaCore = Math.min(0.24, 0.05 + normalizedShare * 0.18);
+      const alphaMid = Math.min(0.15, 0.02 + normalizedShare * 0.11);
+      const blurPx = Math.max(24, 44 - normalizedShare * 10);
 
-        return {
-          key: `${item.key}-${idx}`,
-          style: {
-            left: `${6 + seedX * 88}%`,
-            top: `${8 + ((seedY * 78 + spread * 18) % 82)}%`,
-            width: `${size}vmax`,
-            height: `${size}vmax`,
-            opacity,
-            background: `radial-gradient(circle, ${hexToRgba(item.color, alphaCore)} 0%, ${hexToRgba(
-              item.color,
-              alphaMid,
-            )} 38%, rgba(0,0,0,0) 72%)`,
-            filter: `blur(${blurPx}px) saturate(150%)`,
-            transform: "translate3d(0,0,0)",
-            boxShadow: `0 0 20px ${hexToRgba(item.color, 0.16)}, 0 0 56px ${hexToRgba(
-              item.color,
-              0.1,
-            )}`,
-          } as React.CSSProperties,
-        };
-      });
-    },
-    [fx.layers],
-  );
+      return {
+        key: `${item.key}-${idx}`,
+        style: {
+          left: `${6 + seedX * 88}%`,
+          top: `${8 + ((seedY * 78 + spread * 18) % 82)}%`,
+          width: `${size}vmax`,
+          height: `${size}vmax`,
+          opacity,
+          background: `radial-gradient(circle, ${hexToRgba(item.color, alphaCore)} 0%, ${hexToRgba(
+            item.color,
+            alphaMid,
+          )} 38%, rgba(0,0,0,0) 72%)`,
+          filter: `blur(${blurPx}px) saturate(150%)`,
+          transform: "translate3d(0,0,0)",
+          boxShadow: `0 0 20px ${hexToRgba(item.color, 0.16)}, 0 0 56px ${hexToRgba(
+            item.color,
+            0.1,
+          )}`,
+        } as React.CSSProperties,
+      };
+    });
+  }, [fx.layers]);
 
   const cosmicPlanets = useMemo<CosmicPlanetNode[]>(() => {
     const byPlanet = new Map<
@@ -646,6 +710,7 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
 
     fx.layers.forEach((layer) => {
       if (!layer.planet) return;
+      if (layer.planet === "Сонце") return;
       const current = byPlanet.get(layer.planet) ?? {
         color: layer.color,
         weight: 0,
@@ -676,8 +741,7 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
           size: 0.22 + baseSize * 0.22 * scaleByMatrix,
           speed: 0.05 + share * 0.26,
           phase: seeded(planet) * Math.PI * 2,
-          texturePath:
-            PLANET_TEXTURES[planet] ?? PLANET_TEXTURES.Плутон,
+          texturePath: PLANET_TEXTURES[planet] ?? PLANET_TEXTURES.Плутон,
         };
       })
       .sort((a, b) => b.weight - a.weight);
@@ -696,10 +760,10 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
       style={{
         background: `linear-gradient(135deg, #040712 0%, #070c1b 45%, #050916 100%), linear-gradient(135deg, ${hexToRgba(
           fx.dominantColor,
-          0.1,
-        )} 0%, ${hexToRgba(fx.secondaryColor, 0.08)} 50%, ${hexToRgba(
+          colorOnlyMode ? 0.22 : 0.1,
+        )} 0%, ${hexToRgba(fx.secondaryColor, colorOnlyMode ? 0.2 : 0.08)} 50%, ${hexToRgba(
           fx.tertiaryColor,
-          0.08,
+          colorOnlyMode ? 0.18 : 0.08,
         )} 100%)`,
       }}
     >
@@ -707,14 +771,24 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
         ref={canvasRef}
         aria-hidden="true"
         className="absolute inset-0 h-full w-full"
-        style={{ width: "100%", height: "100%", display: "block", opacity: 0.4, zIndex: 1 }}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+          opacity: colorOnlyMode ? 0.68 : 0.4,
+          zIndex: 1,
+        }}
       />
 
       {planetColorOrbs.map((orb) => (
         <div
           key={orb.key}
           className="absolute rounded-full"
-          style={{ ...orb.style, zIndex: 2, opacity: Number(orb.style.opacity ?? 1) * 0.38 }}
+          style={{
+            ...orb.style,
+            zIndex: 2,
+            opacity: Number(orb.style.opacity ?? 1) * 0.38,
+          }}
         />
       ))}
 
@@ -767,25 +841,27 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
         className="absolute inset-0"
         style={{
           zIndex: 2,
-          background:
-            "radial-gradient(circle at 50% 45%, rgba(15, 24, 48, 0.18) 0%, rgba(5, 9, 20, 0.6) 65%, rgba(2, 5, 12, 0.84) 100%)",
+          background: colorOnlyMode
+            ? "radial-gradient(circle at 50% 45%, rgba(30, 46, 90, 0.08) 0%, rgba(8, 13, 30, 0.35) 65%, rgba(5, 8, 18, 0.52) 100%)"
+            : "radial-gradient(circle at 50% 45%, rgba(15, 24, 48, 0.18) 0%, rgba(5, 9, 20, 0.6) 65%, rgba(2, 5, 12, 0.84) 100%)",
         }}
       />
 
-      <div className="absolute inset-0" style={{ zIndex: 3 }}>
-        <Canvas
-          camera={{ position: [0, 8, 26], fov: 46 }}
-          gl={{ alpha: true, antialias: true }}
-          onCreated={({ gl }) => {
-            gl.setClearColor(new THREE.Color("#000000"), 0);
-          }}
-        >
-          <Suspense fallback={null}>
-            <CosmicSkyScene planets={cosmicPlanets} />
-          </Suspense>
-        </Canvas>
-      </div>
-
+      {showPlanets && (
+        <div className="absolute inset-0" style={{ zIndex: 3 }}>
+          <Canvas
+            camera={{ position: [0, 8, 26], fov: 46 }}
+            gl={{ alpha: true, antialias: true }}
+            onCreated={({ gl }) => {
+              gl.setClearColor(new THREE.Color("#000000"), 0);
+            }}
+          >
+            <Suspense fallback={null}>
+              <CosmicSkyScene planets={cosmicPlanets} />
+            </Suspense>
+          </Canvas>
+        </div>
+      )}
     </div>
   );
 }
