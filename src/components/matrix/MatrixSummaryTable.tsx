@@ -474,7 +474,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           <p className="text-sm font-semibold" style={{ color: tableAccent }}>
             {topBaseTitle}
           </p>
-          <p className="mt-1 text-base font-medium" style={{ color: tableText }}>
+          <p
+            className="mt-1 text-base font-medium"
+            style={{ color: tableText }}
+          >
             Значення: {parsed.rawValue || "—"}
           </p>
           <p className="mt-1 text-sm" style={{ color: tableTextMuted }}>
@@ -579,7 +582,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
               <p className="mt-1 text-xs" style={{ color: tableTextMuted }}>
                 Наразі явний іміджевий сигнал у цій зоні не сформований.
               </p>
-              <p className="mt-1 text-xs font-medium" style={{ color: tableAccent }}>
+              <p
+                className="mt-1 text-xs font-medium"
+                style={{ color: tableAccent }}
+              >
                 Що зробити, щоб вас краще розуміли люди: прямо проговорюйте свою
                 позицію, узгоджуйте очікування і підкріплюйте наміри конкретними
                 діями.
@@ -616,7 +622,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
             оточення.
           </p>
         )}
-        <p className={`${size.title} font-semibold`} style={{ color: tableAccent }}>
+        <p
+          className={`${size.title} font-semibold`}
+          style={{ color: tableAccent }}
+        >
           Енергія {effectiveEnergy}
           {profile && (
             <>
@@ -653,7 +662,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
             ? ` (${parsed.mainCount} + ${parsed.bracketCount} у дужках)`
             : ""}
         </p>
-        <p className={`mt-1 ${size.status} font-medium`} style={{ color: tableText }}>
+        <p
+          className={`mt-1 ${size.status} font-medium`}
+          style={{ color: tableText }}
+        >
           Статус: <span style={{ color: statusColor }}>{statusLabel}</span>
         </p>
         {statusText && (
@@ -700,7 +712,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           {MATRIX_COLUMN_LABELS.map((label) => (
             <div
               key={label}
-              className="rounded-sm border px-2 py-2 text-center text-[6px] font-semibold tracking-widest uppercase text-pretty sm:text-[11px] md:rounded-full md:text-[10px]"
+              className="border px-2 py-2 text-center font-semibold tracking-widest uppercase text-pretty md:text-[11px] text-[9px] rounded-[18px]"
               style={{
                 borderColor: tableBorderStrong,
                 color: tableText,
@@ -728,11 +740,17 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                 boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), ${ui.shadowSoft}`,
               }}
             >
-              <p className="text-[9px] leading-tight md:text-[11px]" style={{ color: tableText }}>
+              <p
+                className="text-[9px] leading-tight md:text-[11px]"
+                style={{ color: tableText }}
+              >
                 {MATRIX_ROW_LABELS[rowIndex] ?? `Ряд ${rowIndex + 1}`}
               </p>
               {MATRIX_ROW_TIME_LABELS[rowIndex] && (
-                <p className="mt-1 text-[10px] tracking-wide uppercase" style={{ color: tableAccent }}>
+                <p
+                  className="mt-1 text-[10px] tracking-wide uppercase"
+                  style={{ color: tableAccent }}
+                >
                   {MATRIX_ROW_TIME_LABELS[rowIndex]}
                 </p>
               )}
@@ -748,7 +766,9 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                 const isActive =
                   activeCell.rowIndex === rowIndex &&
                   activeCell.colIndex === colIndex;
-                const interactiveClass = isActive ? "ring-1" : "hover:brightness-105";
+                const interactiveClass = isActive
+                  ? "ring-1"
+                  : "hover:brightness-105";
 
                 return (
                   <button
@@ -845,7 +865,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
               boxShadow: `${ui.shadowStrong}, 0 0 30px -18px ${activeTheme.glow}, 0 0 0 1px ${activeTheme.border}`,
             }}
           >
-            <p className="text-[11px] tracking-wide uppercase" style={{ color: tableAccent }}>
+            <p
+              className="text-[11px] tracking-wide uppercase"
+              style={{ color: tableAccent }}
+            >
               {activeParsed.rowLabel} • {activeParsed.columnLabel}
               {activeParsed.timeLabel ? ` • ${activeParsed.timeLabel}` : ""}
             </p>
@@ -876,7 +899,10 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           boxShadow: ui.shadowStrong,
         }}
       >
-        <p className="text-[13px] tracking-widest uppercase" style={{ color: tableAccent }}>
+        <p
+          className="text-[13px] tracking-widest uppercase"
+          style={{ color: tableAccent }}
+        >
           Розбір усіх комірок
         </p>
         <div className="mt-3 space-y-2.5">
@@ -921,11 +947,17 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                         : `inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 1px ${theme.border}, ${ui.shadowSoft}, 0 0 24px -18px ${theme.glow}`,
                     }}
                   >
-                    <p className="text-[16px] font-semibold leading-snug" style={{ color: tableText }}>
+                    <p
+                      className="text-[16px] font-semibold leading-snug"
+                      style={{ color: tableText }}
+                    >
                       {parsed.rowLabel} • {parsed.columnLabel}
                       {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
                     </p>
-                    <p className="mt-1.5 text-[19px] font-bold" style={{ color: tableText }}>
+                    <p
+                      className="mt-1.5 text-[19px] font-bold"
+                      style={{ color: tableText }}
+                    >
                       Значення: {parsed.rawValue || "—"}
                     </p>
                     {renderParsedBlock(
