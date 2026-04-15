@@ -1,11 +1,12 @@
 import { useEffect, useRef, type UIEvent } from 'react'
+import { getUITheme, type ThemeMode } from '../../theme/uiTheme'
 
 type ScrollColumnProps = {
   items: readonly string[]
   selectedIndex: number
   onChange: (nextIndex: number) => void
   wrapAround?: boolean
-  theme?: 'light' | 'dark'
+  theme?: ThemeMode
 }
 
 const ITEM_HEIGHT = 48
@@ -21,6 +22,8 @@ export function ScrollColumn({
   wrapAround = false,
   theme = 'dark',
 }: ScrollColumnProps) {
+  const ui = getUITheme(theme, 0.5)
+
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const syncingRef = useRef(false)
@@ -116,13 +119,16 @@ export function ScrollColumn({
             <span
               className={`transition-all duration-300 ${
                 isSelected
-                  ? theme === 'dark'
-                    ? 'scale-110 text-xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]'
-                    : 'scale-110 text-xl font-bold text-slate-900 drop-shadow-[0_0_8px_rgba(15,23,42,0.12)]'
-                  : theme === 'dark'
-                    ? 'scale-90 text-base font-medium text-white/30 hover:text-white/50'
-                    : 'scale-90 text-base font-medium text-slate-500/60 hover:text-slate-700/80'
+                  ? 'scale-110 text-xl font-bold'
+                  : 'scale-90 text-base font-medium'
               }`}
+              style={{
+                color: isSelected ? ui.text : ui.textSoft,
+                opacity: isSelected ? 1 : 0.55,
+                filter: isSelected
+                  ? `drop-shadow(0 0 8px ${ui.ring})`
+                  : 'none',
+              }}
             >
               {item}
             </span>

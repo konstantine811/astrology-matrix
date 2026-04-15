@@ -5,14 +5,35 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --ui-text: #0f172a;
+  --ui-text-muted: #334155;
+  --ui-text-soft: #475569;
+  --ui-accent: #4338ca;
+  --ui-border: rgba(100, 116, 139, 0.4);
+  --ui-border-strong: rgba(100, 116, 139, 0.58);
+  --ui-surface: rgba(255, 255, 255, 0.5);
+  --ui-surface-alt: rgba(241, 245, 249, 0.5);
+  --ui-surface-deep: rgba(226, 232, 240, 0.5);
+  --ui-surface-soft: rgba(255, 255, 255, 0.28);
+  --ui-page-background: radial-gradient(
+      1200px 600px at 50% -220px,
+      rgba(191, 219, 254, 0.4),
+      transparent 70%
+    ),
+    #e2e8f0;
+  --ui-overlay-button: rgba(255, 255, 255, 0.4);
+  --ui-ring: rgba(15, 23, 42, 0.24);
+  --ui-shadow-soft: 0 12px 26px -16px rgba(15, 23, 42, 0.28);
+  --ui-shadow-strong: 0 20px 44px -14px rgba(15, 23, 42, 0.28);
+  --ui-opacity: 0.5;
 }
 
 body {
   font-family: "Inter", sans-serif;
   margin: 0;
   min-height: 100vh;
-  background-color: #030712;
-  color: #0f172a;
+  background: var(--ui-page-background);
+  color: var(--ui-text);
 }
 
 #root {
@@ -29,39 +50,39 @@ body {
 }
 
 .matrix-day-picker .rdp-root {
-  --rdp-accent-color: #1e293b;
-  --rdp-accent-background-color: rgba(15, 23, 42, 0.08);
-  --rdp-selected-border: 2px solid rgba(30, 41, 59, 0.45);
-  --rdp-today-color: #0f172a;
-  color: rgba(15, 23, 42, 0.92);
+  --rdp-accent-color: var(--ui-text);
+  --rdp-accent-background-color: var(--ui-surface-soft);
+  --rdp-selected-border: 2px solid var(--ui-border-strong);
+  --rdp-today-color: var(--ui-text);
+  color: var(--ui-text);
 }
 
 .matrix-day-picker .rdp-button_previous,
 .matrix-day-picker .rdp-button_next {
-  border: 1px solid rgba(15, 23, 42, 0.22);
+  border: 1px solid var(--ui-border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.66);
-  color: rgba(15, 23, 42, 0.95);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .matrix-day-picker .rdp-button_previous:hover,
 .matrix-day-picker .rdp-button_next:hover {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ui-surface-alt);
 }
 
 .matrix-day-picker .rdp-chevron {
-  fill: rgba(15, 23, 42, 0.9);
+  fill: var(--ui-text);
 }
 
 .matrix-day-picker .rdp-day_button {
-  color: rgba(15, 23, 42, 0.92);
+  color: var(--ui-text);
 }
 
 .matrix-day-picker .rdp-selected .rdp-day_button {
-  background: rgba(15, 23, 42, 0.08);
-  border: 2px solid rgba(15, 23, 42, 0.92);
-  color: #0f172a;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+  background: var(--ui-surface-soft);
+  border: 2px solid var(--ui-border-strong);
+  color: var(--ui-text);
+  box-shadow: 0 0 0 2px var(--ui-surface-soft);
 }
 
 .matrix-day-picker .rdp-caption_label {
@@ -81,60 +102,14 @@ body {
   height: 34px;
   padding: 0.25rem 0.5rem;
   border-radius: 0.6rem;
-  border: 1px solid rgba(15, 23, 42, 0.2);
-  background: rgba(255, 255, 255, 0.78);
-  color: #0f172a;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   font-size: 0.875rem;
   line-height: 1;
 }
 
 .matrix-day-picker .rdp-dropdown option {
-  background: #f8fafc;
-  color: #0f172a;
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-root {
-  --rdp-accent-color: #ffffff;
-  --rdp-accent-background-color: rgba(255, 255, 255, 0.08);
-  --rdp-selected-border: 2px solid rgba(255, 255, 255, 0.95);
-  --rdp-today-color: #ffffff;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-button_previous,
-html[data-theme="dark"] .matrix-day-picker .rdp-button_next {
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.95);
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-button_previous:hover,
-html[data-theme="dark"] .matrix-day-picker .rdp-button_next:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-chevron {
-  fill: rgba(255, 255, 255, 0.98);
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-day_button {
-  color: rgba(255, 255, 255, 0.92);
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-selected .rdp-day_button {
-  background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.98);
-  color: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-dropdown {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-}
-
-html[data-theme="dark"] .matrix-day-picker .rdp-dropdown option {
-  background: #0e1017;
-  color: #fff;
+  background: var(--ui-surface-deep);
+  color: var(--ui-text);
 }

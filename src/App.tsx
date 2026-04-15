@@ -4,60 +4,86 @@ import { BirthDatePicker } from "./components/date-picker/BirthDatePicker";
 // import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
 import { MatrixSummaryTable } from "./components/matrix/MatrixSummaryTable";
 import {
+  applyUIThemeCssVars,
+  getUITheme,
+  type ThemeMode,
+} from "./theme/uiTheme";
+import {
+  PLANET_COLORS_BY_NAME,
+  PLANET_SYMBOLS_BY_NAME,
+} from "./theme/planetColors";
+import {
   DEFAULT_BIRTH_YEAR,
   MONTHS_UA,
   createDayOptions,
   createYearOptions,
 } from "./constants/date";
-import { ENERGY_NORM_COUNT, ENERGY_PROFILES } from "./data/energyNorms";
+import {
+  ENERGY_NORM_COUNT,
+  ENERGY_PROFILES,
+  getNormStatus,
+} from "./data/energyNorms";
 import { buildMatrixModelTable, parseMatrixCell } from "./utils/modelTable";
 // import { calculateDestinyMatrix } from "./utils/matrix";
 
-type ThemeMode = "light" | "dark";
-type LiquidPalette = {
-  deep: string;
-  mid: string;
-  highlight: string;
-  intensity: number;
+type FxProfileMode = "soft" | "balanced" | "intense";
+type FlowDirection = "horizontal" | "diagonal" | "vertical" | "turbulence";
+type EnergyLayerFx = {
+  id: string;
+  energy: number;
+  planet: string | null;
+  color: string;
+  weight: number;
+  bracketWeight: number;
+  aboveWeight: number;
+  direction: FlowDirection;
+  rowIndex: number;
+  count: number;
+  bracketCount: number;
+  norm: number;
+};
+type BackgroundFxModel = {
+  layers: EnergyLayerFx[];
+  dominantColor: string;
+  secondaryColor: string;
+  tertiaryColor: string;
+  speedPulse: number;
+  grain: number;
+  contrast: number;
+  texture: number;
+  resonanceGlow: number;
+  profile: FxProfileMode;
+  normalizationFactor: number;
+  totalAbove: number;
+  bracketField: number;
+};
+type PlanetLegendItem = {
+  planet: string;
+  symbol: string;
+  color: string;
+  weight: number;
+  share: number;
+  total: number;
+  norm: number;
+};
+type MainTabKey = "matrix" | "potential";
+type PotentialItem = {
+  energy: number;
+  title: string;
+  sectionTitle: string;
+  value: string;
+  total: number;
+  norm: number;
+  status: "below" | "normal" | "above" | "absent";
+  summary: string;
 };
 
-const PLANET_COLOR_BY_NAME: Record<string, string> = {
-  Сонце: "#f97316",
-  Місяць: "#60a5fa",
-  Меркурій: "#d946ef",
-  Венера: "#fde047",
-  Марс: "#ef4444",
-  Юпітер: "#fb7185",
-  Сатурн: "#f59e0b",
-  Уран: "#22d3ee",
-  Нептун: "#8b5cf6",
-  Плутон: "#ec4899",
-  Прозерпіна: "#a78bfa",
-  Вулкан: "#f97316",
+const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
+  soft: 0.78,
+  balanced: 1,
+  intense: 1.3,
 };
-
-function hexToRgb(hex: string): [number, number, number] {
-  const normalized = hex.replace("#", "");
-  return [
-    parseInt(normalized.slice(0, 2), 16),
-    parseInt(normalized.slice(2, 4), 16),
-    parseInt(normalized.slice(4, 6), 16),
-  ];
-}
-
-function rgbToHex(r: number, g: number, b: number): string {
-  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
-  return `#${clamp(r).toString(16).padStart(2, "0")}${clamp(g)
-    .toString(16)
-    .padStart(2, "0")}${clamp(b).toString(16).padStart(2, "0")}`;
-}
-
-function mixHex(colorA: string, colorB: string, ratio: number): string {
-  const [ar, ag, ab] = hexToRgb(colorA);
-  const [br, bg, bb] = hexToRgb(colorB);
-  const t = Math.max(0, Math.min(1, ratio));
-  return rgbToHex(ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t);
-}
+const MATRIX_CELL_OPACITY = 0.5;
 
 function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -76,6 +102,9 @@ function App() {
   const [monthIndex, setMonthIndex] = useState(0);
   const [yearIndex, setYearIndex] = useState(defaultYearIndex);
   const [dayIndex, setDayIndex] = useState(0);
+  const [activeMainTab, setActiveMainTab] = useState<MainTabKey>("matrix");
+  const fxProfile: FxProfileMode = "balanced";
+  const [fxBurstToken, setFxBurstToken] = useState(0);
   // const [showDetails, setShowDetails] = useState(false);
 
   const selectedYear = Number.parseInt(years[yearIndex], 10);
@@ -94,6 +123,7 @@ function App() {
     month: monthIndex + 1,
     year: selectedYear,
   });
+  const ui = useMemo(() => getUITheme(theme, MATRIX_CELL_OPACITY), [theme]);
 
   useEffect(() => {
     if (dayIndex > days.length - 1) {
@@ -105,6 +135,10 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
     window.localStorage.setItem("metasense-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    applyUIThemeCssVars(ui);
+  }, [ui]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -136,58 +170,228 @@ function App() {
     [debouncedBirthDate.day, debouncedBirthDate.month, debouncedBirthDate.year],
   );
 
-  const liquidPalette = useMemo<LiquidPalette>(() => {
-    const energyWeights = new Map<number, number>();
+  const backgroundFx = useMemo<BackgroundFxModel>(() => {
+    const layers: EnergyLayerFx[] = [];
+    const profileMultiplier = PROFILE_MULTIPLIERS[fxProfile];
+    const rowFlow: Record<number, FlowDirection> = {
+      1: "horizontal",
+      2: "diagonal",
+      3: "vertical",
+      4: "turbulence",
+    };
+
+    let totalAbove = 0;
+    let totalBracket = 0;
+    const rowResonance: number[] = [];
 
     modelTable.rows.forEach((row, rowIndex) => {
-      row.forEach((value, colIndex) => {
-        if (colIndex >= 3 || rowIndex === 0) return;
+      row.forEach((rawValue, colIndex) => {
+        const parsed = parseMatrixCell(rowIndex, colIndex, rawValue);
+        if (colIndex === 3 && rowIndex > 0) {
+          const total = parsed.mainCount + parsed.bracketCount;
+          const normForSigma = parsed.energy
+            ? (ENERGY_NORM_COUNT[parsed.energy] ?? 1)
+            : 1;
+          rowResonance.push(total / normForSigma);
+          return;
+        }
 
-        const parsed = parseMatrixCell(rowIndex, colIndex, value);
+        if (colIndex >= 3 || rowIndex === 0) return;
         if (!parsed.energy || parsed.energy < 1 || parsed.energy > 12) return;
 
-        const totalCount = parsed.mainCount + parsed.bracketCount;
-        if (totalCount <= 0) return;
-
         const norm = ENERGY_NORM_COUNT[parsed.energy] ?? 1;
-        const normalizedWeight = totalCount / Math.max(norm, 1);
-        energyWeights.set(parsed.energy, normalizedWeight);
+        const count = parsed.mainCount;
+        const bracketCount = parsed.bracketCount;
+        const total = count + bracketCount;
+        if (total <= 0) return;
+
+        const baseWeight = total / norm;
+        const bracketWeight = bracketCount / norm;
+        const aboveWeight = Math.max(0, total - norm) / norm;
+        const profile = ENERGY_PROFILES[parsed.energy];
+        const color = profile
+          ? (PLANET_COLORS_BY_NAME[profile.planet] ?? "#60a5fa")
+          : "#60a5fa";
+
+        totalAbove += aboveWeight;
+        totalBracket += bracketWeight;
+
+        layers.push({
+          id: `${rowIndex}-${colIndex}-${parsed.energy}`,
+          energy: parsed.energy,
+          planet: profile?.planet ?? null,
+          color,
+          weight: baseWeight,
+          bracketWeight,
+          aboveWeight,
+          direction: rowFlow[rowIndex] ?? "horizontal",
+          rowIndex,
+          count,
+          bracketCount,
+          norm,
+        });
       });
     });
 
-    const ranked = [...energyWeights.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3);
+    const sortedByWeight = [...layers].sort((a, b) => b.weight - a.weight);
+    const dominantColor = sortedByWeight[0]?.color ?? "#60a5fa";
+    const secondaryColor = sortedByWeight[1]?.color ?? dominantColor;
+    const tertiaryColor = sortedByWeight[2]?.color ?? secondaryColor;
 
-    const getPlanetColorByEnergy = (energy: number): string => {
-      const profile = ENERGY_PROFILES[energy];
-      return profile
-        ? (PLANET_COLOR_BY_NAME[profile.planet] ?? "#60a5fa")
-        : "#60a5fa";
-    };
+    const maxWeight = sortedByWeight[0]?.weight ?? 1;
+    const normalizationFactor = 1 / Math.max(1, Math.pow(maxWeight, 0.65));
 
-    const base: LiquidPalette = {
-      deep: "#04050b",
-      mid: "#134d93",
-      highlight: "#8cecff",
-      intensity: 1,
-    };
+    const normalizedLayers = layers.map((layer) => ({
+      ...layer,
+      weight: Math.min(
+        1.6,
+        Math.tanh(layer.weight * normalizationFactor) * profileMultiplier,
+      ),
+      bracketWeight: Math.min(
+        1.1,
+        Math.tanh(layer.bracketWeight * normalizationFactor) *
+          profileMultiplier,
+      ),
+      aboveWeight: Math.min(
+        1.2,
+        Math.tanh(layer.aboveWeight * normalizationFactor) * profileMultiplier,
+      ),
+    }));
 
-    if (ranked.length === 0) return base;
+    const weights = normalizedLayers.map((layer) => layer.weight);
+    const avg =
+      weights.length > 0
+        ? weights.reduce((acc, value) => acc + value, 0) / weights.length
+        : 0;
+    const variance =
+      weights.length > 0
+        ? weights.reduce((acc, value) => acc + (value - avg) ** 2, 0) /
+          weights.length
+        : 0;
+    const texture = Math.min(
+      1.4,
+      Math.sqrt(variance) * 2.6 + totalAbove * 0.08,
+    );
+    const resonanceGlow = Math.min(
+      1.6,
+      (rowResonance.reduce((acc, value) => acc + value, 0) /
+        Math.max(1, rowResonance.length)) *
+        0.9,
+    );
 
-    const c1 = getPlanetColorByEnergy(ranked[0][0]);
-    const c2 = getPlanetColorByEnergy(ranked[1]?.[0] ?? ranked[0][0]);
-    const c3 = getPlanetColorByEnergy(ranked[2]?.[0] ?? ranked[0][0]);
-    const maxWeight = ranked[0]?.[1] ?? 1;
-    const intensity = Math.max(0.7, Math.min(1.35, 0.72 + maxWeight * 0.2));
+    const speedPulse =
+      Math.min(2.2, 0.8 + totalAbove * 0.32) * profileMultiplier;
+    const grain = Math.min(0.2, 0.025 + texture * 0.05);
+    const contrast = Math.min(1.5, 1.02 + texture * 0.2);
 
     return {
-      deep: mixHex("#02030a", c1, 0.38),
-      mid: mixHex("#0a1f4d", c2, 0.58),
-      highlight: mixHex("#7dd3fc", c3, 0.66),
-      intensity,
+      layers: normalizedLayers,
+      dominantColor,
+      secondaryColor,
+      tertiaryColor,
+      speedPulse,
+      grain,
+      contrast,
+      texture,
+      resonanceGlow,
+      profile: fxProfile,
+      normalizationFactor,
+      totalAbove,
+      bracketField: totalBracket,
     };
+  }, [fxProfile, modelTable.rows]);
+
+  const planetLegend = useMemo<PlanetLegendItem[]>(() => {
+    const byPlanet = new Map<
+      string,
+      { color: string; weight: number; total: number; norm: number }
+    >();
+
+    backgroundFx.layers.forEach((layer) => {
+      if (!layer.planet) return;
+      const current = byPlanet.get(layer.planet) ?? {
+        color: PLANET_COLORS_BY_NAME[layer.planet] ?? layer.color,
+        weight: 0,
+        total: 0,
+        norm: 0,
+      };
+      current.weight += layer.weight;
+      current.total += layer.count + layer.bracketCount;
+      current.norm += layer.norm;
+      byPlanet.set(layer.planet, current);
+    });
+
+    const totalWeight = Math.max(
+      0.0001,
+      Array.from(byPlanet.values()).reduce((acc, item) => acc + item.weight, 0),
+    );
+
+    return Array.from(byPlanet.entries())
+      .map(([planet, item]) => ({
+        planet,
+        symbol: PLANET_SYMBOLS_BY_NAME[planet] ?? "✶",
+        color: item.color,
+        weight: item.weight,
+        share: (item.weight / totalWeight) * 100,
+        total: item.total,
+        norm: item.norm,
+      }))
+      .sort((a, b) => b.weight - a.weight);
+  }, [backgroundFx.layers]);
+
+  const potentialItems = useMemo<PotentialItem[]>(() => {
+    const layout = [
+      { energy: 1, row: 1, col: 0, title: "Потенціал 1", sectionTitle: "Строка 1" },
+      { energy: 2, row: 1, col: 1, title: "Потенціал 2", sectionTitle: "Строка 1" },
+      { energy: 3, row: 1, col: 2, title: "Потенціал 3", sectionTitle: "Строка 1" },
+      { energy: 4, row: 2, col: 0, title: "Потенціал 4", sectionTitle: "Строка 2" },
+      { energy: 5, row: 2, col: 1, title: "Потенціал 5", sectionTitle: "Строка 2" },
+      { energy: 6, row: 2, col: 2, title: "Потенціал 6", sectionTitle: "Строка 2" },
+    ] as const;
+
+    return layout.map((item) => {
+      const raw = modelTable.rows[item.row]?.[item.col] ?? "-";
+      const parsed = parseMatrixCell(item.row, item.col, raw);
+      const total = parsed.mainCount + parsed.bracketCount;
+      const norm = ENERGY_NORM_COUNT[item.energy] ?? 1;
+      const status = total > 0 ? getNormStatus(total, norm) : "absent";
+      const profile = ENERGY_PROFILES[item.energy];
+
+      const summary =
+        status === "normal"
+          ? profile.base
+          : status === "above"
+            ? profile.above
+            : status === "below"
+              ? profile.below
+              : "Число не проявлене явно: потенціал розкривається через практику в цій темі.";
+
+      return {
+        energy: item.energy,
+        title: item.title,
+        sectionTitle: item.sectionTitle,
+        value: parsed.rawValue,
+        total,
+        norm,
+        status,
+        summary,
+      };
+    });
   }, [modelTable.rows]);
+
+  useEffect(() => {
+    setFxBurstToken((value) => value + 1);
+  }, [
+    modelTable.calcLine.day,
+    modelTable.calcLine.month,
+    modelTable.calcLine.year,
+    modelTable.calcLine.calc1,
+    modelTable.calcLine.calc2,
+    modelTable.calcLine.calc3,
+    modelTable.calcLine.calc4,
+    modelTable.calcLine.calc5,
+    modelTable.calcLine.calc6,
+  ]);
 
   const handleDateSelect = (date: Date) => {
     const nextYearIndex = years.indexOf(String(date.getFullYear()));
@@ -204,25 +408,23 @@ function App() {
   };
 
   return (
-    <div
-      className={`relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 sm:py-6 ${
-        theme === "dark" ? "text-white" : "text-slate-900"
-      }`}
-    >
-      <Particles palette={liquidPalette} />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 sm:py-6">
+      <Particles fx={backgroundFx} burstToken={fxBurstToken} />
 
       <div className="relative z-10 flex w-full flex-col items-center">
-        <div className="fixed top-3 right-3 z-[100]">
+        <div className="fixed top-3 right-3 z-[100] flex items-center gap-2">
           <button
             type="button"
             onClick={() =>
               setTheme((prev) => (prev === "dark" ? "light" : "dark"))
             }
-            className={`flex h-10 w-10 items-center justify-center rounded-full border text-lg shadow-md backdrop-blur transition hover:scale-105 ${
-              theme === "dark"
-                ? "border-white/30 bg-black/40"
-                : "border-slate-300 bg-white/80"
-            }`}
+            className="flex h-10 w-10 items-center justify-center rounded-full border text-lg shadow-md backdrop-blur transition hover:scale-105"
+            style={{
+              borderColor: ui.border,
+              background: ui.overlayButton,
+              color: ui.text,
+              boxShadow: ui.shadowSoft,
+            }}
             aria-label="Перемкнути тему"
             title={
               theme === "dark"
@@ -234,26 +436,25 @@ function App() {
           </button>
         </div>
 
-        <h1
-          className={`mb-3 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl ${
-            theme === "dark"
-              ? "bg-linear-to-b from-white to-white/75"
-              : "bg-linear-to-b from-slate-900 to-slate-600"
-          }`}
-        >
-          <span className="font-bold text-indigo-400">MetaSense</span> - Твоє
-          призначення
+        <h1 className="mb-3 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
+          <span
+            style={{
+              backgroundImage: `linear-gradient(to bottom, ${ui.headingFrom}, ${ui.headingTo})`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            <span className="font-bold text-indigo-400">MetaSense</span> - Твоє
+            призначення
+          </span>
         </h1>
 
-        <div className="w-full backdrop-blur-[1px]">
+        <div className="w-full">
           <div className="mb-4 w-full flex flex-col items-center justify-center">
             <div className="mb-3 flex items-center justify-center gap-2">
               <span className="text-indigo-300">✧</span>
-              <span
-                className={`text-xs font-medium tracking-widest uppercase ${
-                  theme === "dark" ? "text-indigo-200/80" : "text-indigo-700/85"
-                }`}
-              >
+              <span className="text-xs font-medium tracking-widest uppercase text-[var(--ui-accent)]">
                 Універсальна Матриця
               </span>
             </div>
@@ -263,7 +464,12 @@ function App() {
             </div> */}
 
             <div
-              className={`max-w-sm w-full flex justify-center items-center backdrop-blur-sm rounded-2xl ${theme === "dark" ? "bg-black/50" : "bg-white/50"}`}
+              className="max-w-sm w-full flex justify-center items-center rounded-2xl backdrop-blur-md"
+              style={{
+                background: ui.surfaceSoft,
+                border: `1px solid ${ui.border}`,
+                boxShadow: ui.shadowSoft,
+              }}
             >
               <BirthDatePicker
                 months={MONTHS_UA}
@@ -281,13 +487,15 @@ function App() {
               />
             </div>
             <div
-              className={`mt-2 mb-2 flex w-full max-w-3xl flex-row items-center justify-center gap-4 px-4 text-center text-lg font-semibold tracking-wide sm:text-2xl backdrop-blur-md bg-white/30 rounded-2xl ${
-                theme === "dark" ? "text-white" : "text-slate-900"
-              }`}
+              className="mt-2 mb-2 flex flex-row items-center justify-center gap-4 rounded-2xl px-4 text-center text-lg font-semibold tracking-wide backdrop-blur-md sm:text-2xl"
+              style={{
+                color: ui.text,
+                background: ui.surfaceSoft,
+                border: `1px solid ${ui.border}`,
+                boxShadow: ui.shadowSoft,
+              }}
             >
-              <span
-                className={`text-xs ${theme === "dark" ? "text-indigo-300" : "text-indigo-700"}`}
-              >
+              <span className="text-xs text-[var(--ui-accent)]">
                 {modelTable.calcLine.day}.{modelTable.calcLine.month}.
                 {modelTable.calcLine.year}
               </span>
@@ -298,8 +506,174 @@ function App() {
               ({modelTable.calcLine.calc5}
               {modelTable.calcLine.calc6})
             </div>
-            <div className="max-w-3xl w-full flex justify-center items-center  relative z-50">
-              <MatrixSummaryTable rows={modelTable.rows} theme={theme} cellOpacity={50} />
+            {planetLegend.length > 0 && (
+              <div
+                className="mb-2 flex w-full max-w-3xl flex-wrap items-center justify-center gap-2 rounded-2xl px-2 py-2 backdrop-blur-md"
+                style={{
+                  background: ui.surfaceSoft,
+                  border: `1px solid ${ui.border}`,
+                  boxShadow: ui.shadowSoft,
+                }}
+              >
+                {planetLegend.map((item) => (
+                  <div
+                    key={item.planet}
+                    className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs"
+                    style={{
+                      borderColor: `${item.color}99`,
+                      background: `${item.color}22`,
+                      color: ui.text,
+                    }}
+                    title={`${item.planet}: ${item.total}/${item.norm} • ${item.share.toFixed(1)}% впливу`}
+                  >
+                    <span
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[16px] font-semibold leading-none"
+                      style={{
+                        color: item.color,
+                        background: `${item.color}14`,
+                        boxShadow: `0 0 10px ${item.color}66`,
+                      }}
+                    >
+                      {item.symbol}
+                    </span>
+                    <span className="font-medium">{item.planet}</span>
+                    <span style={{ color: ui.textSoft }}>
+                      {item.share.toFixed(0)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mb-2 flex w-full max-w-3xl items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("matrix")}
+                className="rounded-full border px-3 py-1 text-sm font-semibold transition"
+                style={{
+                  color: ui.text,
+                  borderColor: ui.borderStrong,
+                  background:
+                    activeMainTab === "matrix" ? ui.surfaceAlt : ui.surfaceSoft,
+                  boxShadow: ui.shadowSoft,
+                }}
+              >
+                Таблиця матриці
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("potential")}
+                className="rounded-full border px-3 py-1 text-sm font-semibold transition"
+                style={{
+                  color: ui.text,
+                  borderColor: ui.borderStrong,
+                  background:
+                    activeMainTab === "potential"
+                      ? ui.surfaceAlt
+                      : ui.surfaceSoft,
+                  boxShadow: ui.shadowSoft,
+                }}
+              >
+                Розписаний потенціал
+              </button>
+            </div>
+            <div className="max-w-3xl w-full flex justify-center items-center relative z-50">
+              {activeMainTab === "matrix" ? (
+                <MatrixSummaryTable
+                  rows={modelTable.rows}
+                  theme={theme}
+                  cellOpacity={MATRIX_CELL_OPACITY * 100}
+                />
+              ) : (
+                <div
+                  className="w-full rounded-[28px] border p-3 backdrop-blur-md"
+                  style={{
+                    borderColor: ui.borderStrong,
+                    background: ui.surfaceSoft,
+                    boxShadow: ui.shadowStrong,
+                    color: ui.text,
+                  }}
+                >
+                  <div
+                    className="rounded-2xl border p-3"
+                    style={{ borderColor: ui.border }}
+                  >
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: ui.accent }}
+                    >
+                      АНАЛІЗ МАТРИЦІ (за бланком дослідження)
+                    </p>
+                    <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
+                      Строка 1: Потенціали особистісного прояву, енергія
+                      особистості, психофізіологічні характеристики (1, 2, 3).
+                    </p>
+                    <p className="text-sm" style={{ color: ui.textMuted }}>
+                      Строка 2: Потенціали енергії взаємодії з людьми,
+                      особливості поведінки у стосунках (4, 5, 6).
+                    </p>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    {potentialItems.map((item) => {
+                      const profile = ENERGY_PROFILES[item.energy];
+                      const statusLabel =
+                        item.status === "normal"
+                          ? "Норма"
+                          : item.status === "above"
+                            ? "Вище норми"
+                            : item.status === "below"
+                              ? "Нижче норми"
+                              : "Немає числа";
+                      const statusColor =
+                        item.status === "normal"
+                          ? "#10b981"
+                          : item.status === "above"
+                            ? "#ef4444"
+                            : item.status === "below"
+                              ? "#f59e0b"
+                              : ui.textSoft;
+
+                      return (
+                        <div
+                          key={`${item.energy}-${item.title}`}
+                          className="rounded-2xl border p-3"
+                          style={{
+                            borderColor: ui.border,
+                            background: ui.surfaceAlt,
+                            boxShadow: ui.shadowSoft,
+                          }}
+                        >
+                          <p
+                            className="text-xs font-medium"
+                            style={{ color: ui.textSoft }}
+                          >
+                            {item.sectionTitle}
+                          </p>
+                          <p
+                            className="text-sm font-semibold"
+                            style={{ color: ui.accent }}
+                          >
+                            {item.title} • {profile.name}
+                          </p>
+                          <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
+                            Значення: {item.value || "-"} • Норма: {item.norm} •
+                            Факт: {item.total}
+                          </p>
+                          <p
+                            className="text-sm font-medium"
+                            style={{ color: statusColor }}
+                          >
+                            Статус: {statusLabel}
+                          </p>
+                          <p className="mt-1 text-sm" style={{ color: ui.text }}>
+                            {item.summary}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

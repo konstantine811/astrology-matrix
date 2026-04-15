@@ -5,6 +5,7 @@ import { DayPicker } from "react-day-picker";
 import { uk } from "date-fns/locale";
 import "react-day-picker/style.css";
 import { ScrollColumn } from "../ui/ScrollColumn";
+import { getUITheme, type ThemeMode } from "../../theme/uiTheme";
 
 type BirthDatePickerProps = {
   months: readonly string[];
@@ -18,7 +19,7 @@ type BirthDatePickerProps = {
   onYearChange: (index: number) => void;
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
-  theme?: "light" | "dark";
+  theme?: ThemeMode;
 };
 
 export function BirthDatePicker({
@@ -35,7 +36,7 @@ export function BirthDatePicker({
   onDateSelect,
   theme = "dark",
 }: BirthDatePickerProps) {
-  const isDark = theme === "dark";
+  const ui = getUITheme(theme, 0.5);
   const [pickerMonth, setPickerMonth] = useState<Date>(selectedDate);
   const yearNumbers = years
     .map((y) => Number.parseInt(y, 10))
@@ -73,11 +74,11 @@ export function BirthDatePicker({
       className={`relative mb-4 flex w-full select-none justify-center rounded-3xl`}
     >
       <div
-        className={`pointer-events-none absolute top-1/2 left-4 right-4 h-12 -translate-y-6 rounded-xl border border-white/10 bg-white/4 ${
-          isDark
-            ? "border-white/10 bg-white/4"
-            : "border-slate-500/15 bg-white/4"
-        }`}
+        className="pointer-events-none absolute top-1/2 left-4 right-4 h-12 -translate-y-6 rounded-xl border"
+        style={{
+          borderColor: ui.border,
+          background: ui.surfaceSoft,
+        }}
       />
 
       <div className="relative z-10 flex w-full max-w-[320px] items-center justify-between gap-3">
@@ -104,7 +105,12 @@ export function BirthDatePicker({
           <Popover.Trigger asChild>
             <button
               type="button"
-              className={`h-11 w-11 shrink-0 rounded-xl border transition`}
+              className="h-11 w-11 shrink-0 rounded-xl border transition"
+              style={{
+                borderColor: ui.border,
+                color: ui.text,
+                background: ui.surfaceSoft,
+              }}
               aria-label="Обрати дату з календаря"
             >
               <CalendarIcon className="mx-auto h-5 w-5" />
@@ -113,11 +119,12 @@ export function BirthDatePicker({
           <Popover.Portal>
             <Popover.Content
               sideOffset={10}
-              className={`z-[70] rounded-2xl border p-3 backdrop-blur-xl ${
-                isDark
-                  ? "border-white/10 bg-[#0E1017]/95 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.7)]"
-                  : "border-slate-400/20 bg-white/95 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.25)]"
-              }`}
+              className="z-[70] rounded-2xl border p-3 backdrop-blur-xl"
+              style={{
+                borderColor: ui.border,
+                background: ui.surfaceDeep,
+                boxShadow: ui.shadowStrong,
+              }}
             >
               <DayPicker
                 mode="single"
@@ -131,10 +138,10 @@ export function BirthDatePicker({
                 onSelect={(date) => {
                   if (date) onDateSelect(date);
                 }}
-                className={`matrix-day-picker ${isDark ? "text-white" : "text-slate-900"}`}
+                className="matrix-day-picker"
               />
               <Popover.Arrow
-                className={isDark ? "fill-[#0E1017]/95" : "fill-white/95"}
+                style={{ fill: ui.surfaceDeep }}
               />
             </Popover.Content>
           </Popover.Portal>

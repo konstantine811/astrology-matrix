@@ -20,10 +20,12 @@ import {
   parseMatrixCell,
   type MatrixModelTableRow,
 } from "../../utils/modelTable";
+import { getUITheme, type ThemeMode } from "../../theme/uiTheme";
+import { PLANET_COLORS_BY_NAME } from "../../theme/planetColors";
 
 type MatrixSummaryTableProps = {
   rows: MatrixModelTableRow[];
-  theme?: "light" | "dark";
+  theme?: ThemeMode;
   cellOpacity?: number;
 };
 
@@ -238,21 +240,6 @@ const PLANET_SYMBOLS: Record<string, string> = {
   Вулкан: "🜂",
 };
 
-const PLANET_COLORS: Record<string, string> = {
-  Сонце: "#f97316",
-  Місяць: "#60a5fa",
-  Меркурій: "#d946ef",
-  Венера: "#fde047",
-  Марс: "#ef4444",
-  Юпітер: "#fb7185",
-  Сатурн: "#f59e0b",
-  Уран: "#22d3ee",
-  Нептун: "#8b5cf6",
-  Плутон: "#ec4899",
-  Прозерпіна: "#a78bfa",
-  Вулкан: "#f97316",
-};
-
 function getEnergyByCellPosition(
   rowIndex: number,
   colIndex: number,
@@ -276,9 +263,16 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   theme = "dark",
   cellOpacity = 50,
 }: MatrixSummaryTableProps) {
-  const isDark = theme === "dark";
-  const normalizedCellOpacity = Math.max(0, Math.min(100, cellOpacity));
-  const alpha = normalizedCellOpacity / 100;
+  const ui = getUITheme(theme, cellOpacity / 100);
+  const tableSurface = ui.surface;
+  const tableSurfaceAlt = ui.surfaceAlt;
+  const tableSurfaceSoft = ui.surfaceSoft;
+  const tableBorder = ui.border;
+  const tableBorderStrong = ui.borderStrong;
+  const tableText = ui.text;
+  const tableTextMuted = ui.textMuted;
+  const tableTextSoft = ui.textSoft;
+  const tableAccent = ui.accent;
   const [isTouchMode, setIsTouchMode] = useState(false);
   const [activeCell, setActiveCell] = useState<{
     rowIndex: number;
@@ -420,11 +414,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
 
   const renderParsedBlock = (
     parsed: ReturnType<typeof parseMatrixCell>,
-    className = `mt-2 rounded-[16px] border p-2.5 ${
-      isDark
-        ? "border-white/[0.06] bg-[#13151C]/95"
-        : "border-slate-300/70 bg-white/90"
-    }`,
+    className = "mt-2 rounded-[16px] border p-2.5",
     compact = false,
   ) => {
     const fallbackEnergy = getEnergyByCellPosition(
@@ -478,30 +468,20 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           style={{
             borderColor: cardTheme.border,
             boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.03), 0 0 0 1px ${cardTheme.border}, 0 12px 24px -18px rgba(0,0,0,0.85), 0 0 24px -16px ${cardTheme.glow}`,
-            background: isDark
-              ? "linear-gradient(180deg, rgba(17,21,31,0.95), rgba(10,12,18,0.98))"
-              : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98))",
+            background: `linear-gradient(180deg, ${ui.surfaceAlt}, ${ui.surfaceDeep})`,
           }}
         >
-          <p
-            className={`text-sm font-semibold ${isDark ? "text-cyan-100" : "text-cyan-800"}`}
-          >
+          <p className="text-sm font-semibold" style={{ color: tableAccent }}>
             {topBaseTitle}
           </p>
-          <p
-            className={`mt-1 text-base font-medium ${isDark ? "text-white/90" : "text-slate-900"}`}
-          >
+          <p className="mt-1 text-base font-medium" style={{ color: tableText }}>
             Значення: {parsed.rawValue || "—"}
           </p>
-          <p
-            className={`mt-1 text-sm ${isDark ? "text-white/85" : "text-slate-700"}`}
-          >
+          <p className="mt-1 text-sm" style={{ color: tableTextMuted }}>
             {topBaseText}
           </p>
           {zeroStateText && (
-            <p
-              className={`mt-1 text-sm font-medium ${isDark ? "text-emerald-300" : "text-emerald-700"}`}
-            >
+            <p className="mt-1 text-sm font-medium text-emerald-600">
               {zeroStateText}
             </p>
           )}
@@ -520,22 +500,14 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           : status === "above"
             ? "Вище норми"
             : "Немає числа";
-    const statusClass =
+    const statusColor =
       status === "normal"
-        ? isDark
-          ? "text-emerald-300"
-          : "text-emerald-700"
+        ? "#10b981"
         : status === "above"
-          ? isDark
-            ? "text-rose-300"
-            : "text-rose-700"
+          ? "#f43f5e"
           : status === "below"
-            ? isDark
-              ? "text-amber-300"
-              : "text-amber-700"
-            : isDark
-              ? "text-slate-300"
-              : "text-slate-700";
+            ? "#f59e0b"
+            : tableTextSoft;
     const statusText =
       status === "normal"
         ? "Здібності та енергія проявляються природно, стабільно і легко."
@@ -591,32 +563,30 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
 
     if (effectiveEnergy === null) {
       return (
-        <div className={className}>
+        <div
+          className={className}
+          style={{
+            borderColor: tableBorder,
+            background: tableSurfaceAlt,
+          }}
+        >
           {isImageColumn ? (
             <>
-              <p
-                className={`text-xs ${isDark ? "text-cyan-100/90" : "text-cyan-800/90"}`}
-              >
+              <p className="text-xs" style={{ color: tableAccent }}>
                 4-й стовпчик: сумарний резонанс енергій рядка (показник
                 отримується через суму цифр у рядку) і те, як це бачать інші.
               </p>
-              <p
-                className={`mt-1 text-xs ${isDark ? "text-white/80" : "text-slate-700"}`}
-              >
+              <p className="mt-1 text-xs" style={{ color: tableTextMuted }}>
                 Наразі явний іміджевий сигнал у цій зоні не сформований.
               </p>
-              <p
-                className={`mt-1 text-xs font-medium ${isDark ? "text-cyan-100/90" : "text-cyan-800/90"}`}
-              >
+              <p className="mt-1 text-xs font-medium" style={{ color: tableAccent }}>
                 Що зробити, щоб вас краще розуміли люди: прямо проговорюйте свою
                 позицію, узгоджуйте очікування і підкріплюйте наміри конкретними
                 діями.
               </p>
             </>
           ) : (
-            <p
-              className={`text-xs ${isDark ? "text-white/75" : "text-slate-700"}`}
-            >
+            <p className="text-xs" style={{ color: tableTextMuted }}>
               Для цієї комірки енергія не виділена окремим числом.
             </p>
           )}
@@ -636,23 +606,17 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           return {
             borderColor: cardTheme.border,
             boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.03), 0 0 0 1px ${cardTheme.border}, 0 12px 24px -18px rgba(0,0,0,0.85), 0 0 24px -16px ${accentGlow}`,
-            background: isDark
-              ? "linear-gradient(180deg, rgba(17,21,31,0.95), rgba(10,12,18,0.98))"
-              : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98))",
+            background: `linear-gradient(180deg, ${ui.surfaceAlt}, ${ui.surfaceDeep})`,
           };
         })()}
       >
         {parsed.colIndex === 3 && (
-          <p
-            className={`${size.imageHint} ${isDark ? "text-cyan-100/90" : "text-cyan-800/90"}`}
-          >
+          <p className={size.imageHint} style={{ color: tableAccent }}>
             4-й стовпчик: сумарний резонанс енергій рядка і видимий ефект для
             оточення.
           </p>
         )}
-        <p
-          className={`${size.title} font-semibold ${isDark ? "text-cyan-100" : "text-cyan-800"}`}
-        >
+        <p className={`${size.title} font-semibold`} style={{ color: tableAccent }}>
           Енергія {effectiveEnergy}
           {profile && (
             <>
@@ -662,8 +626,8 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
               <span
                 className="mx-1 inline-block text-[1.05em] leading-none"
                 style={{
-                  color: PLANET_COLORS[profile.planet] ?? "#e2e8f0",
-                  filter: `drop-shadow(0 0 4px ${PLANET_COLORS[profile.planet] ?? "#94a3b8"}66)`,
+                  color: PLANET_COLORS_BY_NAME[profile.planet] ?? "#e2e8f0",
+                  filter: `drop-shadow(0 0 4px ${PLANET_COLORS_BY_NAME[profile.planet] ?? "#94a3b8"}66)`,
                 }}
               >
                 {PLANET_SYMBOLS[profile.planet] ?? "✶"}
@@ -674,64 +638,46 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           )}
         </p>
         {profile?.base && (
-          <p
-            className={`mt-1 ${size.body} ${isDark ? "text-white/85" : "text-slate-700"}`}
-          >
+          <p className={`mt-1 ${size.body}`} style={{ color: tableTextMuted }}>
             {profile.base}
           </p>
         )}
         {parsed.colIndex === 3 && profile?.base && (
-          <p
-            className={`mt-1 ${size.body} ${isDark ? "text-white/90" : "text-slate-800"}`}
-          >
+          <p className={`mt-1 ${size.body}`} style={{ color: tableText }}>
             Люди частіше зчитують вас як: {profile.base.toLowerCase()}
           </p>
         )}
-        <p
-          className={`mt-1 ${size.stat} ${isDark ? "text-white/90" : "text-slate-800"}`}
-        >
+        <p className={`mt-1 ${size.stat}`} style={{ color: tableText }}>
           Норма: {count ?? "—"} • Факт: {totalCount}
           {parsed.bracketCount > 0
             ? ` (${parsed.mainCount} + ${parsed.bracketCount} у дужках)`
             : ""}
         </p>
-        <p
-          className={`mt-1 ${size.status} font-medium ${isDark ? "text-cyan-50" : "text-slate-900"}`}
-        >
-          Статус: <span className={statusClass}>{statusLabel}</span>
+        <p className={`mt-1 ${size.status} font-medium`} style={{ color: tableText }}>
+          Статус: <span style={{ color: statusColor }}>{statusLabel}</span>
         </p>
         {statusText && (
-          <p
-            className={`mt-1 ${size.body} ${isDark ? "text-white/85" : "text-slate-700"}`}
-          >
+          <p className={`mt-1 ${size.body}`} style={{ color: tableTextMuted }}>
             {statusText}
           </p>
         )}
         {profileStatusText && (
-          <p
-            className={`mt-1 ${size.body} ${isDark ? "text-white/80" : "text-slate-700"}`}
-          >
+          <p className={`mt-1 ${size.body}`} style={{ color: tableTextMuted }}>
             {profileStatusText}
           </p>
         )}
         {currentLevel && (
-          <p
-            className={`mt-1 ${size.body} ${isDark ? "text-white/80" : "text-slate-700"}`}
-          >
+          <p className={`mt-1 ${size.body}`} style={{ color: tableTextMuted }}>
             {currentLevel}
           </p>
         )}
         {parsed.bracketCount > 0 && (
-          <p
-            className={`mt-1 ${size.body} ${isDark ? "text-white/80" : "text-slate-700"}`}
-          >
+          <p className={`mt-1 ${size.body}`} style={{ color: tableTextMuted }}>
             Числа в дужках — це друга хвиля сприйняття: неявний, відчутний
             потенціал, який потребує пропрацювання і закріплення досвідом.
           </p>
         )}
-        <p
-          className={`mt-1 ${size.footer} font-medium ${isDark ? "text-emerald-300" : "text-emerald-700"}`}
-        >
+        <p className={`mt-1 ${size.footer} font-medium text-emerald-600`}>
           {isImageColumn ? workOnText : `Що пропрацьовувати: ${workOnText}`}
         </p>
       </div>
@@ -740,30 +686,26 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
 
   return (
     <div
-      className={`relative mb-3 w-full rounded-xl border backdrop-blur-md md:rounded-[32px] pt-1 ${
-        isDark
-          ? "border-white/25 bg-[#0A0C10]/10 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8),inset_0_0_80px_rgba(45,212,191,0.05)]"
-          : "border-slate-300/60 bg-white/10 shadow-[0_20px_50px_-20px_rgba(15,23,42,0.28),inset_0_0_50px_rgba(56,189,248,0.08)]"
-      }`}
+      className="relative mb-3 w-full rounded-xl border pt-1 backdrop-blur-md md:rounded-[32px]"
+      style={{
+        borderColor: tableBorderStrong,
+        background: tableSurfaceSoft,
+        boxShadow: ui.shadowStrong,
+      }}
     >
-      <div
-        className={`pointer-events-none absolute inset-0 md:rounded-[32px] ${isDark ? "shadow-[0_0_60px_rgba(45,212,191,0.04)]" : "shadow-[0_0_60px_rgba(56,189,248,0.08)]"}`}
-      />
+      <div className="pointer-events-none absolute inset-0 md:rounded-[32px]" />
       <div className="relative mb-2 grid grid-cols-[minmax(0,1.2fr)_minmax(0,4fr)] gap-1 px-1">
         <div />
         <div className="grid grid-cols-4 gap-1.5">
           {MATRIX_COLUMN_LABELS.map((label) => (
             <div
               key={label}
-              className={`rounded-sm border px-2 py-2 text-center text-[6px] font-semibold tracking-widest uppercase text-pretty sm:text-[11px] md:rounded-full md:text-[10px] ${
-                isDark
-                  ? "border-white/25 text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                  : "border-sky-200/80 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-              }`}
+              className="rounded-sm border px-2 py-2 text-center text-[6px] font-semibold tracking-widest uppercase text-pretty sm:text-[11px] md:rounded-full md:text-[10px]"
               style={{
-                backgroundColor: isDark
-                  ? `rgba(18,20,26,${alpha})`
-                  : `rgba(240,249,255,${alpha})`,
+                borderColor: tableBorderStrong,
+                color: tableText,
+                backgroundColor: tableSurfaceAlt,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), ${ui.shadowSoft}`,
               }}
             >
               {label}
@@ -779,26 +721,18 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
             className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,4fr)] gap-1"
           >
             <div
-              className={`rounded-[18px] border px-2 py-2 ${
-                isDark
-                  ? "border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                  : "border-sky-200/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-              }`}
+              className="rounded-[18px] border px-2 py-2"
               style={{
-                backgroundColor: isDark
-                  ? `rgba(14,16,22,${alpha})`
-                  : `rgba(240,249,255,${alpha})`,
+                borderColor: tableBorderStrong,
+                backgroundColor: tableSurfaceAlt,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), ${ui.shadowSoft}`,
               }}
             >
-              <p
-                className={`text-[9px] leading-tight md:text-[11px] ${isDark ? "text-slate-300/90" : "text-slate-800"}`}
-              >
+              <p className="text-[9px] leading-tight md:text-[11px]" style={{ color: tableText }}>
                 {MATRIX_ROW_LABELS[rowIndex] ?? `Ряд ${rowIndex + 1}`}
               </p>
               {MATRIX_ROW_TIME_LABELS[rowIndex] && (
-                <p
-                  className={`mt-1 text-[10px] tracking-wide uppercase ${isDark ? "text-teal-300/75" : "text-teal-600"}`}
-                >
+                <p className="mt-1 text-[10px] tracking-wide uppercase" style={{ color: tableAccent }}>
                   {MATRIX_ROW_TIME_LABELS[rowIndex]}
                 </p>
               )}
@@ -814,33 +748,20 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                 const isActive =
                   activeCell.rowIndex === rowIndex &&
                   activeCell.colIndex === colIndex;
-                const interactiveClass = isActive
-                  ? isDark
-                    ? "ring-1 ring-white/35"
-                    : "ring-1 ring-slate-500/35"
-                  : isDark
-                    ? "hover:brightness-110"
-                    : "hover:brightness-98";
+                const interactiveClass = isActive ? "ring-1" : "hover:brightness-105";
 
                 return (
                   <button
                     key={`${rowIndex}-${colIndex}`}
                     type="button"
-                    className={`${cellBaseClass} ${isDark ? "text-slate-200" : "text-slate-800"} ${interactiveClass} cursor-pointer transition`}
+                    className={`${cellBaseClass} ${interactiveClass} cursor-pointer transition`}
                     style={{
-                      borderColor: isDark
-                        ? "rgba(255,255,255,0.25)"
-                        : "rgba(148,163,184,0.35)",
-                      background: isDark
-                        ? `linear-gradient(180deg, rgba(255,255,255,${alpha}), rgba(255,255,255,${alpha}))`
-                        : `linear-gradient(180deg, rgba(255,255,255,${alpha}), rgba(255,255,255,${alpha}))`,
+                      color: tableText,
+                      borderColor: tableBorderStrong,
+                      background: `linear-gradient(180deg, ${tableSurface}, ${tableSurface})`,
                       boxShadow: isActive
-                        ? isDark
-                          ? "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(255,255,255,0.22), 0 0 0 2px rgba(255,255,255,0.2), 0 10px 22px -14px rgba(0,0,0,0.8)"
-                          : "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(100,116,139,0.45), 0 0 0 2px rgba(30,41,59,0.3), 0 8px 18px -12px rgba(15,23,42,0.28)"
-                        : isDark
-                          ? "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,255,255,0.18), 0 10px 22px -14px rgba(0,0,0,0.8)"
-                          : "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(148,163,184,0.4), 0 8px 18px -12px rgba(15,23,42,0.2)",
+                        ? `inset 0 1px 0 0 rgba(255,255,255,0.1), 0 0 0 1px ${tableBorderStrong}, 0 0 0 2px ${ui.ring}, ${ui.shadowSoft}`
+                        : `inset 0 1px 0 0 rgba(255,255,255,0.08), 0 0 0 1px ${tableBorder}, ${ui.shadowSoft}`,
                     }}
                     onMouseEnter={() => {
                       if (!isTouchMode) {
@@ -915,28 +836,20 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
         createPortal(
           <div
             ref={tooltipRef}
-            className="pointer-events-none fixed z-50 h-auto w-[min(88vw,360px)] overflow-hidden rounded-[24px] border p-3"
+            className="pointer-events-none fixed z-50 h-auto w-[min(88vw,360px)] overflow-hidden rounded-[24px] border p-3 backdrop-blur-md"
             style={{
               left: tooltipPosition.left,
               top: tooltipPosition.top,
               borderColor: activeTheme.border,
-              background: isDark
-                ? "linear-gradient(180deg, rgba(10,13,20,0.98), rgba(8,10,16,0.98))"
-                : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98))",
-              boxShadow: isDark
-                ? `0 20px 40px -10px rgba(0,0,0,0.8), 0 0 30px -18px ${activeTheme.glow}, 0 0 0 1px ${activeTheme.border}`
-                : `0 20px 40px -10px rgba(15,23,42,0.25), 0 0 20px -16px ${activeTheme.glow}, 0 0 0 1px ${activeTheme.border}`,
+              background: `linear-gradient(180deg, ${ui.surfaceAlt}, ${ui.surfaceDeep})`,
+              boxShadow: `${ui.shadowStrong}, 0 0 30px -18px ${activeTheme.glow}, 0 0 0 1px ${activeTheme.border}`,
             }}
           >
-            <p
-              className={`text-[11px] tracking-wide uppercase ${isDark ? "text-teal-200/85" : "text-teal-700"}`}
-            >
+            <p className="text-[11px] tracking-wide uppercase" style={{ color: tableAccent }}>
               {activeParsed.rowLabel} • {activeParsed.columnLabel}
               {activeParsed.timeLabel ? ` • ${activeParsed.timeLabel}` : ""}
             </p>
-            <p
-              className={`mt-1 text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}
-            >
+            <p className="mt-1 text-sm font-bold" style={{ color: tableText }}>
               Значення: {activeParsed.rawValue || "—"}
             </p>
             {renderParsedBlock(activeParsed, undefined, true)}
@@ -948,9 +861,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                 height: 0,
                 borderLeft: "7px solid transparent",
                 borderRight: "7px solid transparent",
-                borderTop: isDark
-                  ? "8px solid rgba(14, 16, 23, 0.85)"
-                  : "8px solid rgba(255,255,255,0.95)",
+                borderTop: `8px solid ${ui.surfaceDeep}`,
               }}
             />
           </div>,
@@ -958,15 +869,14 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
         )}
 
       <div
-        className={`mt-3 rounded-[26px] border p-3 backdrop-blur-xl ${
-          isDark
-            ? "border-teal-500/20 bg-[#0E1017]/82 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.08)]"
-            : "border-slate-300/70 bg-white/85 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.22),0_0_24px_rgba(56,189,248,0.08)]"
-        }`}
+        className="mt-3 rounded-[26px] border p-3 backdrop-blur-xl"
+        style={{
+          borderColor: tableBorderStrong,
+          background: tableSurfaceAlt,
+          boxShadow: ui.shadowStrong,
+        }}
       >
-        <p
-          className={`text-[13px] tracking-widest uppercase ${isDark ? "text-teal-200/80" : "text-teal-700"}`}
-        >
+        <p className="text-[13px] tracking-widest uppercase" style={{ color: tableAccent }}>
           Розбір усіх комірок
         </p>
         <div className="mt-3 space-y-2.5">
@@ -1004,28 +914,18 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
                       borderColor: isHighlighted
                         ? "rgba(94, 234, 212, 0.85)"
                         : theme.border,
-                      background: isDark
-                        ? "linear-gradient(180deg, rgba(16,19,28,0.95), rgba(10,12,18,0.98))"
-                        : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98))",
+                      background: `linear-gradient(180deg, ${ui.surfaceAlt}, ${ui.surfaceDeep})`,
                       transform: isHighlighted ? "translateY(-1px)" : "none",
                       boxShadow: isHighlighted
-                        ? isDark
-                          ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(94,234,212,0.55), 0 0 0 2px rgba(45,212,191,0.4), 0 16px 34px -14px rgba(0,0,0,0.75), 0 0 42px -10px rgba(45,212,191,0.7)`
-                          : `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(94,234,212,0.55), 0 0 0 2px rgba(45,212,191,0.25), 0 16px 34px -14px rgba(15,23,42,0.3), 0 0 42px -12px rgba(45,212,191,0.35)`
-                        : isDark
-                          ? `inset 0 1px 0 rgba(255,255,255,0.03), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(0,0,0,0.75), 0 0 24px -18px ${theme.glow}`
-                          : `inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px ${theme.border}, 0 12px 24px -16px rgba(15,23,42,0.22), 0 0 24px -18px ${theme.glow}`,
+                        ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(94,234,212,0.55), 0 0 0 2px rgba(45,212,191,0.35), ${ui.shadowStrong}, 0 0 42px -12px rgba(45,212,191,0.45)`
+                        : `inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 1px ${theme.border}, ${ui.shadowSoft}, 0 0 24px -18px ${theme.glow}`,
                     }}
                   >
-                    <p
-                      className={`text-[16px] font-semibold leading-snug ${isDark ? "text-slate-100/95" : "text-slate-900"}`}
-                    >
+                    <p className="text-[16px] font-semibold leading-snug" style={{ color: tableText }}>
                       {parsed.rowLabel} • {parsed.columnLabel}
                       {parsed.timeLabel ? ` • ${parsed.timeLabel}` : ""}
                     </p>
-                    <p
-                      className={`mt-1.5 text-[19px] font-bold ${isDark ? "text-white" : "text-slate-900"}`}
-                    >
+                    <p className="mt-1.5 text-[19px] font-bold" style={{ color: tableText }}>
                       Значення: {parsed.rawValue || "—"}
                     </p>
                     {renderParsedBlock(
