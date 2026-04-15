@@ -1,6 +1,6 @@
 import type { UITheme } from "../../theme/uiTheme";
 
-export type MainTabKey = "matrix" | "potential" | "today";
+export type MainTabKey = "matrix" | "potential" | "today" | "cosmogram3d";
 
 type MainTabsProps = {
   ui: UITheme;
@@ -13,6 +13,7 @@ export function MainTabs({ ui, activeTab, onChange }: MainTabsProps) {
     { key: "matrix", label: "Таблиця матриці" },
     { key: "potential", label: "Розписаний потенціал" },
     { key: "today", label: "Розпис на сьогодні" },
+    { key: "cosmogram3d", label: "3D Космограма" },
   ];
 
   return (

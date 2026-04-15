@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { Particles } from "./components/background/Particles";
 import { BirthDatePicker } from "./components/date-picker/BirthDatePicker";
 // import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
@@ -73,6 +73,11 @@ const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
 };
 const MATRIX_CELL_OPACITY = 0.5;
 const BIRTH_DATE_STORAGE_KEY = "metasense-birth-date";
+const MatrixCosmogram3D = lazy(() =>
+  import("./components/dashboard/MatrixCosmogram3D").then((module) => ({
+    default: module.MatrixCosmogram3D,
+  })),
+);
 
 function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -539,6 +544,25 @@ function App() {
               )}
               {activeMainTab === "today" && (
                 <TodayTabContent ui={ui} dailyInsights={dailyInsights} />
+              )}
+              {activeMainTab === "cosmogram3d" && (
+                <Suspense
+                  fallback={
+                    <div
+                      className="w-full rounded-[28px] border p-6 text-center text-sm backdrop-blur-md"
+                      style={{
+                        borderColor: ui.borderStrong,
+                        background: ui.surfaceSoft,
+                        color: ui.textMuted,
+                        boxShadow: ui.shadowStrong,
+                      }}
+                    >
+                      Завантажуємо 3D сцену...
+                    </div>
+                  }
+                >
+                  <MatrixCosmogram3D ui={ui} items={planetLegend} />
+                </Suspense>
               )}
             </div>
           </div>
