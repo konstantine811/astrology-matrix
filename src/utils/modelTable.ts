@@ -39,6 +39,17 @@ export type MatrixParsedCell = {
 
 export type MatrixModelTable = {
   rows: MatrixModelTableRow[]
+  calcLine: {
+    day: string
+    month: string
+    year: string
+    calc1: number
+    calc2: number
+    calc3: number
+    calc4: number
+    calc5: number
+    calc6: number
+  }
 }
 
 function sumDigits(value: number): number {
@@ -87,10 +98,19 @@ function countSpecialValues(values: number[]): Record<10 | 11 | 12, number> {
   return counts
 }
 
-function toDigitsForMatrix(value: number): number[] {
+type YearTransferMode = 'before2000' | 'from2000'
+
+function toDigitsForMatrix(value: number, mode: YearTransferMode): number[] {
   const abs = Math.abs(value)
-  // From the method: 11 from the calculated row is never split into separate ones.
-  if (abs === 11) {
+
+  // Transfer rules differ by birth year:
+  // - before 2000: 11 is not split into separate digits
+  // - from 2000: 10 and 12 are not split into separate digits
+  if (mode === 'before2000' && abs === 11) {
+    return []
+  }
+
+  if (mode === 'from2000' && (abs === 10 || abs === 12)) {
     return []
   }
 
@@ -246,18 +266,21 @@ export function buildMatrixModelTable({ day, month, year }: BirthDateInput): Mat
   const calc4 = sumDigits(calc3)
   const calc5 = calc1 + calc3
   const calc6 = calc2 + calc4
+  const yearTransferMode: YearTransferMode = year >= 2000 ? 'from2000' : 'before2000'
 
   // Main matrix digits are formed from birth date + 1..4 calculated numbers.
   const mainCalculated = [calc1, calc2, calc3, calc4]
   const mainCounts = countDigitsFromDigitGroups([
     dateDigits,
-    ...mainCalculated.map(toDigitsForMatrix),
+    ...mainCalculated.map((value) => toDigitsForMatrix(value, yearTransferMode)),
   ])
   const mainSpecialCounts = countSpecialValues(mainCalculated)
 
   // 5th and 6th calculated numbers are added in brackets.
   const bracketCalculated = [calc5, calc6]
-  const bracketCounts = countDigitsFromDigitGroups(bracketCalculated.map(toDigitsForMatrix))
+  const bracketCounts = countDigitsFromDigitGroups(
+    bracketCalculated.map((value) => toDigitsForMatrix(value, yearTransferMode)),
+  )
   const bracketSpecialCounts = countSpecialValues(bracketCalculated)
 
   const sigma123Main = normalizeMetric(weightedSumByDigits([1, 2, 3], mainCounts))
@@ -273,6 +296,17 @@ export function buildMatrixModelTable({ day, month, year }: BirthDateInput): Mat
   )
 
   return {
+    calcLine: {
+      day: dayStr,
+      month: monthStr,
+      year: yearStr,
+      calc1,
+      calc2,
+      calc3,
+      calc4,
+      calc5,
+      calc6,
+    },
     rows: [
       [
         String(calc2),

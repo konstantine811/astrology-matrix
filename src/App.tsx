@@ -129,6 +129,18 @@ function App() {
                 onDateSelect={handleDateSelect}
               />
             </div>
+            <div className="mt-2 mb-2 w-full max-w-3xl px-4 text-center text-lg font-semibold tracking-wide text-white sm:text-2xl flex flex-row gap-4 justify-center">
+              <span>
+                {modelTable.calcLine.day}.{modelTable.calcLine.month}.
+                {modelTable.calcLine.year}
+              </span>
+              <span>
+                {modelTable.calcLine.calc1} {modelTable.calcLine.calc2}{" "}
+                {modelTable.calcLine.calc3} {modelTable.calcLine.calc4}{" "}
+              </span>{" "}
+              ({modelTable.calcLine.calc5}
+              {modelTable.calcLine.calc6})
+            </div>
             <div className="max-w-3xl w-full flex justify-center items-center  relative z-50">
               <MatrixSummaryTable rows={modelTable.rows} />
             </div>
