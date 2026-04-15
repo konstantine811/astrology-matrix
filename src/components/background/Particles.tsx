@@ -112,6 +112,8 @@ void main() {
   float highBand = smoothstep(0.62, 1.08, structure);
   vec3 col = mix(u_colorDeep, u_colorMid, lowBand);
   col = mix(col, u_colorHighlight, highBand);
+  vec3 baseCol = mix(u_colorDeep, u_colorMid, 0.52);
+  col = mix(baseCol, col, 0.88);
 
   float glow = smoothstep(0.52, 0.95, structure) * (0.35 + 0.5 * u_flowStrength);
   col += glow * u_colorHighlight * 0.35;
@@ -124,7 +126,7 @@ void main() {
   float dither = (hash(gl_FragCoord.xy + t * 10.0) - 0.5) * u_grain;
   col += dither;
 
-  float alpha = smoothstep(0.08, 0.95, structure) * u_opacity;
+  float alpha = u_opacity;
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), clamp(alpha, 0.0, 1.0));
 }
 `;
@@ -303,7 +305,7 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
       gl.uniform1f(uFlowStrength, baseFlowStrength);
       gl.uniform1f(uGrain, fx.grain);
       gl.uniform1f(uContrast, fx.contrast);
-      gl.uniform1f(uOpacity, 0.62);
+      gl.uniform1f(uOpacity, 0.92);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
       for (const layer of fx.layers) {
@@ -483,7 +485,19 @@ export function Particles({ fx, burstToken = 0 }: ParticlesProps) {
   }
 
   return (
-    <div ref={hostRef} className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div
+      ref={hostRef}
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${hexToRgba(
+          fx.dominantColor,
+          0.44,
+        )} 0%, ${hexToRgba(fx.secondaryColor, 0.38)} 50%, ${hexToRgba(
+          fx.tertiaryColor,
+          0.34,
+        )} 100%)`,
+      }}
+    >
       <canvas
         ref={canvasRef}
         aria-hidden="true"

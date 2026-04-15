@@ -3,6 +3,13 @@ import { Particles } from "./components/background/Particles";
 import { BirthDatePicker } from "./components/date-picker/BirthDatePicker";
 // import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
 import { MatrixSummaryTable } from "./components/matrix/MatrixSummaryTable";
+import { MainTabs, type MainTabKey } from "./components/dashboard/MainTabs";
+import { PotentialTabContent } from "./components/dashboard/PotentialTabContent";
+import { TodayTabContent } from "./components/dashboard/TodayTabContent";
+import {
+  PlanetLegendBar,
+  type PlanetLegendItem,
+} from "./components/dashboard/PlanetLegendBar";
 import {
   applyUIThemeCssVars,
   getUITheme,
@@ -21,9 +28,10 @@ import {
 import {
   ENERGY_NORM_COUNT,
   ENERGY_PROFILES,
-  getNormStatus,
 } from "./data/energyNorms";
 import { buildMatrixModelTable, parseMatrixCell } from "./utils/modelTable";
+import { usePotentialItems } from "./hooks/usePotentialItems";
+import { useDailyInsights } from "./hooks/useDailyInsights";
 // import { calculateDestinyMatrix } from "./utils/matrix";
 
 type FxProfileMode = "soft" | "balanced" | "intense";
@@ -56,26 +64,6 @@ type BackgroundFxModel = {
   normalizationFactor: number;
   totalAbove: number;
   bracketField: number;
-};
-type PlanetLegendItem = {
-  planet: string;
-  symbol: string;
-  color: string;
-  weight: number;
-  share: number;
-  total: number;
-  norm: number;
-};
-type MainTabKey = "matrix" | "potential";
-type PotentialItem = {
-  energy: number;
-  title: string;
-  sectionTitle: string;
-  value: string;
-  total: number;
-  norm: number;
-  status: "below" | "normal" | "above" | "absent";
-  summary: string;
 };
 
 const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
@@ -124,6 +112,7 @@ function App() {
     year: selectedYear,
   });
   const ui = useMemo(() => getUITheme(theme, MATRIX_CELL_OPACITY), [theme]);
+  const todayDate = useMemo(() => new Date(), []);
 
   useEffect(() => {
     if (dayIndex > days.length - 1) {
@@ -339,45 +328,8 @@ function App() {
       .sort((a, b) => b.weight - a.weight);
   }, [backgroundFx.layers]);
 
-  const potentialItems = useMemo<PotentialItem[]>(() => {
-    const layout = [
-      { energy: 1, row: 1, col: 0, title: "Потенціал 1", sectionTitle: "Строка 1" },
-      { energy: 2, row: 1, col: 1, title: "Потенціал 2", sectionTitle: "Строка 1" },
-      { energy: 3, row: 1, col: 2, title: "Потенціал 3", sectionTitle: "Строка 1" },
-      { energy: 4, row: 2, col: 0, title: "Потенціал 4", sectionTitle: "Строка 2" },
-      { energy: 5, row: 2, col: 1, title: "Потенціал 5", sectionTitle: "Строка 2" },
-      { energy: 6, row: 2, col: 2, title: "Потенціал 6", sectionTitle: "Строка 2" },
-    ] as const;
-
-    return layout.map((item) => {
-      const raw = modelTable.rows[item.row]?.[item.col] ?? "-";
-      const parsed = parseMatrixCell(item.row, item.col, raw);
-      const total = parsed.mainCount + parsed.bracketCount;
-      const norm = ENERGY_NORM_COUNT[item.energy] ?? 1;
-      const status = total > 0 ? getNormStatus(total, norm) : "absent";
-      const profile = ENERGY_PROFILES[item.energy];
-
-      const summary =
-        status === "normal"
-          ? profile.base
-          : status === "above"
-            ? profile.above
-            : status === "below"
-              ? profile.below
-              : "Число не проявлене явно: потенціал розкривається через практику в цій темі.";
-
-      return {
-        energy: item.energy,
-        title: item.title,
-        sectionTitle: item.sectionTitle,
-        value: parsed.rawValue,
-        total,
-        norm,
-        status,
-        summary,
-      };
-    });
-  }, [modelTable.rows]);
+  const potentialItems = usePotentialItems(modelTable);
+  const dailyInsights = useDailyInsights(modelTable, todayDate);
 
   useEffect(() => {
     setFxBurstToken((value) => value + 1);
@@ -506,173 +458,25 @@ function App() {
               ({modelTable.calcLine.calc5}
               {modelTable.calcLine.calc6})
             </div>
-            {planetLegend.length > 0 && (
-              <div
-                className="mb-2 flex w-full max-w-3xl flex-wrap items-center justify-center gap-2 rounded-2xl px-2 py-2 backdrop-blur-md"
-                style={{
-                  background: ui.surfaceSoft,
-                  border: `1px solid ${ui.border}`,
-                  boxShadow: ui.shadowSoft,
-                }}
-              >
-                {planetLegend.map((item) => (
-                  <div
-                    key={item.planet}
-                    className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs"
-                    style={{
-                      borderColor: `${item.color}99`,
-                      background: `${item.color}22`,
-                      color: ui.text,
-                    }}
-                    title={`${item.planet}: ${item.total}/${item.norm} • ${item.share.toFixed(1)}% впливу`}
-                  >
-                    <span
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[16px] font-semibold leading-none"
-                      style={{
-                        color: item.color,
-                        background: `${item.color}14`,
-                        boxShadow: `0 0 10px ${item.color}66`,
-                      }}
-                    >
-                      {item.symbol}
-                    </span>
-                    <span className="font-medium">{item.planet}</span>
-                    <span style={{ color: ui.textSoft }}>
-                      {item.share.toFixed(0)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mb-2 flex w-full max-w-3xl items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveMainTab("matrix")}
-                className="rounded-full border px-3 py-1 text-sm font-semibold transition"
-                style={{
-                  color: ui.text,
-                  borderColor: ui.borderStrong,
-                  background:
-                    activeMainTab === "matrix" ? ui.surfaceAlt : ui.surfaceSoft,
-                  boxShadow: ui.shadowSoft,
-                }}
-              >
-                Таблиця матриці
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMainTab("potential")}
-                className="rounded-full border px-3 py-1 text-sm font-semibold transition"
-                style={{
-                  color: ui.text,
-                  borderColor: ui.borderStrong,
-                  background:
-                    activeMainTab === "potential"
-                      ? ui.surfaceAlt
-                      : ui.surfaceSoft,
-                  boxShadow: ui.shadowSoft,
-                }}
-              >
-                Розписаний потенціал
-              </button>
-            </div>
+            <PlanetLegendBar ui={ui} items={planetLegend} />
+            <MainTabs
+              ui={ui}
+              activeTab={activeMainTab}
+              onChange={setActiveMainTab}
+            />
             <div className="max-w-3xl w-full flex justify-center items-center relative z-50">
-              {activeMainTab === "matrix" ? (
+              {activeMainTab === "matrix" && (
                 <MatrixSummaryTable
                   rows={modelTable.rows}
                   theme={theme}
                   cellOpacity={MATRIX_CELL_OPACITY * 100}
                 />
-              ) : (
-                <div
-                  className="w-full rounded-[28px] border p-3 backdrop-blur-md"
-                  style={{
-                    borderColor: ui.borderStrong,
-                    background: ui.surfaceSoft,
-                    boxShadow: ui.shadowStrong,
-                    color: ui.text,
-                  }}
-                >
-                  <div
-                    className="rounded-2xl border p-3"
-                    style={{ borderColor: ui.border }}
-                  >
-                    <p
-                      className="text-sm font-semibold"
-                      style={{ color: ui.accent }}
-                    >
-                      АНАЛІЗ МАТРИЦІ (за бланком дослідження)
-                    </p>
-                    <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
-                      Строка 1: Потенціали особистісного прояву, енергія
-                      особистості, психофізіологічні характеристики (1, 2, 3).
-                    </p>
-                    <p className="text-sm" style={{ color: ui.textMuted }}>
-                      Строка 2: Потенціали енергії взаємодії з людьми,
-                      особливості поведінки у стосунках (4, 5, 6).
-                    </p>
-                  </div>
-
-                  <div className="mt-3 grid gap-2 md:grid-cols-2">
-                    {potentialItems.map((item) => {
-                      const profile = ENERGY_PROFILES[item.energy];
-                      const statusLabel =
-                        item.status === "normal"
-                          ? "Норма"
-                          : item.status === "above"
-                            ? "Вище норми"
-                            : item.status === "below"
-                              ? "Нижче норми"
-                              : "Немає числа";
-                      const statusColor =
-                        item.status === "normal"
-                          ? "#10b981"
-                          : item.status === "above"
-                            ? "#ef4444"
-                            : item.status === "below"
-                              ? "#f59e0b"
-                              : ui.textSoft;
-
-                      return (
-                        <div
-                          key={`${item.energy}-${item.title}`}
-                          className="rounded-2xl border p-3"
-                          style={{
-                            borderColor: ui.border,
-                            background: ui.surfaceAlt,
-                            boxShadow: ui.shadowSoft,
-                          }}
-                        >
-                          <p
-                            className="text-xs font-medium"
-                            style={{ color: ui.textSoft }}
-                          >
-                            {item.sectionTitle}
-                          </p>
-                          <p
-                            className="text-sm font-semibold"
-                            style={{ color: ui.accent }}
-                          >
-                            {item.title} • {profile.name}
-                          </p>
-                          <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
-                            Значення: {item.value || "-"} • Норма: {item.norm} •
-                            Факт: {item.total}
-                          </p>
-                          <p
-                            className="text-sm font-medium"
-                            style={{ color: statusColor }}
-                          >
-                            Статус: {statusLabel}
-                          </p>
-                          <p className="mt-1 text-sm" style={{ color: ui.text }}>
-                            {item.summary}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              )}
+              {activeMainTab === "potential" && (
+                <PotentialTabContent ui={ui} items={potentialItems} />
+              )}
+              {activeMainTab === "today" && (
+                <TodayTabContent ui={ui} dailyInsights={dailyInsights} />
               )}
             </div>
           </div>
