@@ -6,7 +6,6 @@ import { MatrixSummaryTable } from "./components/matrix/MatrixSummaryTable";
 import { MainTabs, type MainTabKey } from "./components/dashboard/MainTabs";
 import { PotentialTabContent } from "./components/dashboard/PotentialTabContent";
 import { TodayTabContent } from "./components/dashboard/TodayTabContent";
-import { DevelopmentFooter } from "./components/dashboard/DevelopmentFooter";
 import {
   PlanetLegendBar,
   type PlanetLegendItem,
@@ -423,7 +422,7 @@ function App() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 pb-24 sm:py-6 sm:pb-28">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 sm:py-6">
       <Particles fx={backgroundFx} burstToken={fxBurstToken} />
 
       <div className="relative z-10 flex w-full flex-col items-center">
@@ -542,7 +541,6 @@ function App() {
                 <TodayTabContent ui={ui} dailyInsights={dailyInsights} />
               )}
             </div>
-            <DevelopmentFooter />
           </div>
         </div>
       </div>
