@@ -19,36 +19,36 @@ type ThemePreset = {
 };
 
 const SHARED_PAGE_BACKGROUND =
-  "radial-gradient(1200px 600px at 50% -220px, rgba(45,212,191,0.16), transparent 70%), #030712";
+  "transparent";
 
 const PRESETS: Record<ThemeMode, ThemePreset> = {
   light: {
-    text: "#0f172a",
-    textMuted: "#334155",
-    textSoft: "#475569",
-    accent: "#4338ca",
-    headingFrom: "#0f172a",
-    headingTo: "#475569",
+    text: "#18181b",
+    textMuted: "#3f3f46",
+    textSoft: "#52525b",
+    accent: "#27272a",
+    headingFrom: "#18181b",
+    headingTo: "#52525b",
     pageBackground: SHARED_PAGE_BACKGROUND,
-    border: [100, 116, 139],
+    border: [39, 39, 42],
     surface: [255, 255, 255],
-    surfaceAlt: [241, 245, 249],
-    surfaceDeep: [226, 232, 240],
+    surfaceAlt: [250, 250, 250],
+    surfaceDeep: [244, 244, 245],
     overlayButton: [255, 255, 255],
-    ring: [15, 23, 42],
+    ring: [24, 24, 27],
   },
   dark: {
-    text: "#f8fafc",
-    textMuted: "#cbd5e1",
-    textSoft: "#94a3b8",
-    accent: "#a5b4fc",
+    text: "#fafafa",
+    textMuted: "#d4d4d8",
+    textSoft: "#a1a1aa",
+    accent: "#e4e4e7",
     headingFrom: "#ffffff",
-    headingTo: "#cbd5e1",
+    headingTo: "#d4d4d8",
     pageBackground: SHARED_PAGE_BACKGROUND,
     border: [255, 255, 255],
-    surface: [14, 16, 22],
-    surfaceAlt: [18, 20, 26],
-    surfaceDeep: [10, 12, 18],
+    surface: [18, 18, 18],
+    surfaceAlt: [24, 24, 27],
+    surfaceDeep: [12, 12, 14],
     overlayButton: [0, 0, 0],
     ring: [255, 255, 255],
   },
@@ -77,21 +77,21 @@ export function getUITheme(theme: ThemeMode, opacity = 0.5) {
     headingTo: p.headingTo,
     pageBackground: p.pageBackground,
     border: rgba(p.border, 0.24 + o * 0.36),
-    borderStrong: rgba(p.border, 0.42 + o * 0.4),
+    borderStrong: rgba(p.border, 0.32 + o * 0.44),
     ring: rgba(p.ring, theme === "dark" ? 0.34 : 0.26),
     surface: rgba(p.surface, o),
     surfaceAlt: rgba(p.surfaceAlt, o),
     surfaceDeep: rgba(p.surfaceDeep, o),
-    surfaceSoft: rgba(p.surface, Math.max(0.08, o * 0.5)),
+    surfaceSoft: rgba(p.surface, Math.max(0.1, o * 0.52)),
     overlayButton: rgba(p.overlayButton, 0.35 + (1 - o) * 0.1),
     shadowSoft:
       theme === "dark"
-        ? "0 12px 26px -16px rgba(0,0,0,0.82)"
-        : "0 12px 26px -16px rgba(15,23,42,0.28)",
+        ? "0 10px 30px -16px rgba(0,0,0,0.86)"
+        : "0 10px 30px -16px rgba(24,24,27,0.2)",
     shadowStrong:
       theme === "dark"
-        ? "0 20px 44px -14px rgba(0,0,0,0.84)"
-        : "0 20px 44px -14px rgba(15,23,42,0.28)",
+        ? "0 18px 44px -14px rgba(0,0,0,0.86)"
+        : "0 18px 44px -14px rgba(24,24,27,0.22)",
   };
 }
 

@@ -150,6 +150,7 @@ export function useDailyInsights(modelTable: MatrixModelTable, todayDate: Date):
           ? "11:00–16:00 — найкраще вікно для комунікації, узгоджень і творчих задач."
           : "09:30–12:30 та 15:00–17:30 — рівний робочий ритм без перевантаження.";
 
+
     const avoidToday = (() => {
       if (hasStatus(insights, 3, "above")) {
         return "Не поспішайте з реакціями: уникати конфліктних рішень «з ходу» та тиску на інших.";

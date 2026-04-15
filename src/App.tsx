@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Particles } from "./components/background/Particles";
 import { BirthDatePicker } from "./components/date-picker/BirthDatePicker";
 // import { MatrixDiagram } from "./components/matrix/MatrixDiagram";
@@ -6,6 +6,7 @@ import { MatrixSummaryTable } from "./components/matrix/MatrixSummaryTable";
 import { MainTabs, type MainTabKey } from "./components/dashboard/MainTabs";
 import { PotentialTabContent } from "./components/dashboard/PotentialTabContent";
 import { TodayTabContent } from "./components/dashboard/TodayTabContent";
+import { DevelopmentFooter } from "./components/dashboard/DevelopmentFooter";
 import {
   PlanetLegendBar,
   type PlanetLegendItem,
@@ -72,6 +73,7 @@ const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
   intense: 1.3,
 };
 const MATRIX_CELL_OPACITY = 0.5;
+const BIRTH_DATE_STORAGE_KEY = "metasense-birth-date";
 
 function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -87,12 +89,52 @@ function App() {
     return index >= 0 ? index : 0;
   }, [years]);
 
-  const [monthIndex, setMonthIndex] = useState(0);
-  const [yearIndex, setYearIndex] = useState(defaultYearIndex);
-  const [dayIndex, setDayIndex] = useState(0);
+  const initialBirthSelection = useMemo(() => {
+    const fallback = {
+      monthIndex: 0,
+      yearIndex: defaultYearIndex,
+      dayIndex: 0,
+    };
+
+    if (typeof window === "undefined") return fallback;
+
+    try {
+      const raw = window.localStorage.getItem(BIRTH_DATE_STORAGE_KEY);
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw) as {
+        day?: number;
+        month?: number;
+        year?: number;
+      };
+      if (!parsed.day || !parsed.month || !parsed.year) return fallback;
+      if (parsed.month < 1 || parsed.month > 12) return fallback;
+
+      const monthIndexFromStorage = parsed.month - 1;
+      const yearIndexFromStorage = years.indexOf(String(parsed.year));
+      if (yearIndexFromStorage < 0) return fallback;
+
+      const dayOptions = createDayOptions(monthIndexFromStorage, parsed.year);
+      const normalizedDay = String(parsed.day).padStart(2, "0");
+      const dayIndexFromStorage = dayOptions.indexOf(normalizedDay);
+      if (dayIndexFromStorage < 0) return fallback;
+
+      return {
+        monthIndex: monthIndexFromStorage,
+        yearIndex: yearIndexFromStorage,
+        dayIndex: dayIndexFromStorage,
+      };
+    } catch {
+      return fallback;
+    }
+  }, [defaultYearIndex, years]);
+
+  const [monthIndex, setMonthIndex] = useState(initialBirthSelection.monthIndex);
+  const [yearIndex, setYearIndex] = useState(initialBirthSelection.yearIndex);
+  const [dayIndex, setDayIndex] = useState(initialBirthSelection.dayIndex);
   const [activeMainTab, setActiveMainTab] = useState<MainTabKey>("matrix");
   const fxProfile: FxProfileMode = "balanced";
   const [fxBurstToken, setFxBurstToken] = useState(0);
+  const isFirstDatePersistRender = useRef(true);
   // const [showDetails, setShowDetails] = useState(false);
 
   const selectedYear = Number.parseInt(years[yearIndex], 10);
@@ -137,6 +179,27 @@ function App() {
         year: selectedYear,
       });
     }, 200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [monthIndex, selectedDay, selectedYear]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isFirstDatePersistRender.current) {
+      isFirstDatePersistRender.current = false;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      window.localStorage.setItem(
+        BIRTH_DATE_STORAGE_KEY,
+        JSON.stringify({
+          day: selectedDay,
+          month: monthIndex + 1,
+          year: selectedYear,
+        }),
+      );
+    }, 10000);
 
     return () => window.clearTimeout(timeoutId);
   }, [monthIndex, selectedDay, selectedYear]);
@@ -360,7 +423,7 @@ function App() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 sm:py-6">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-2 pb-24 sm:py-6 sm:pb-28">
       <Particles fx={backgroundFx} burstToken={fxBurstToken} />
 
       <div className="relative z-10 flex w-full flex-col items-center">
@@ -479,6 +542,7 @@ function App() {
                 <TodayTabContent ui={ui} dailyInsights={dailyInsights} />
               )}
             </div>
+            <DevelopmentFooter />
           </div>
         </div>
       </div>

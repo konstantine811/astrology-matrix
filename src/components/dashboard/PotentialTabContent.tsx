@@ -1,4 +1,3 @@
-import { ENERGY_PROFILES } from "../../data/energyNorms";
 import type { UITheme } from "../../theme/uiTheme";
 import type { PotentialItem } from "../../hooks/usePotentialItems";
 
@@ -23,18 +22,18 @@ export function PotentialTabContent({ ui, items }: PotentialTabContentProps) {
           АНАЛІЗ МАТРИЦІ (за бланком дослідження)
         </p>
         <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
-          Строка 1: Потенціали особистісного прояву, енергія особистості,
-          психофізіологічні характеристики (1, 2, 3).
+          Розпис формується по всіх комірках таблиці 4×5 (включно з колонкою
+          резонансу/іміджу). Для кожної комірки показано: факт, норма, статус,
+          зміст потенціалу та практична рекомендація.
         </p>
         <p className="text-sm" style={{ color: ui.textMuted }}>
-          Строка 2: Потенціали енергії взаємодії з людьми, особливості
-          поведінки у стосунках (4, 5, 6).
+          Для статусів «Немає числа» та «Нижче норми» окремо додається: чого
+          бракує і як це пропрацювати.
         </p>
       </div>
 
       <div className="mt-3 grid gap-2 md:grid-cols-2">
         {items.map((item) => {
-          const profile = ENERGY_PROFILES[item.energy];
           const statusLabel =
             item.status === "normal"
               ? "Норма"
@@ -54,7 +53,7 @@ export function PotentialTabContent({ ui, items }: PotentialTabContentProps) {
 
           return (
             <div
-              key={`${item.energy}-${item.title}`}
+              key={item.key}
               className="rounded-2xl border p-3"
               style={{
                 borderColor: ui.border,
@@ -66,16 +65,23 @@ export function PotentialTabContent({ ui, items }: PotentialTabContentProps) {
                 {item.sectionTitle}
               </p>
               <p className="text-sm font-semibold" style={{ color: ui.accent }}>
-                {item.title} • {profile.name}
+                {item.title}
               </p>
               <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
-                Значення: {item.value || "-"} • Норма: {item.norm} • Факт: {item.total}
+                Значення: {item.value || "-"}{" "}
+                {item.norm ? `• Норма: ${item.norm}` : ""} • Факт: {item.total}
               </p>
               <p className="text-sm font-medium" style={{ color: statusColor }}>
                 Статус: {statusLabel}
               </p>
+              <p className="mt-1 text-xs font-medium" style={{ color: ui.textSoft }}>
+                {item.profileName}
+              </p>
               <p className="mt-1 text-sm" style={{ color: ui.text }}>
                 {item.summary}
+              </p>
+              <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
+                {item.workOn}
               </p>
             </div>
           );

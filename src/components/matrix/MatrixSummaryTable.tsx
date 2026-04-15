@@ -712,7 +712,7 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           {MATRIX_COLUMN_LABELS.map((label) => (
             <div
               key={label}
-              className="border px-2 py-2 text-center font-semibold tracking-widest uppercase text-pretty md:text-[11px] text-[9px] rounded-[18px]"
+              className="border px-2 py-2 text-center font-semibold tracking-widest uppercase text-pretty md:text-[11px] text-[7px] rounded-[18px]"
               style={{
                 borderColor: tableBorderStrong,
                 color: tableText,

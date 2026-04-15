@@ -132,6 +132,7 @@ export function TodayTabContent({ ui, dailyInsights }: TodayTabContentProps) {
           </ol>
         </div>
       </div>
+
     </div>
   );
 }
