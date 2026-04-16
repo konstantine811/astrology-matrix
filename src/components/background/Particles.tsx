@@ -1,4 +1,4 @@
-import { Canvas, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { CameraControls, Html, Line, Stars } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -40,6 +40,7 @@ type BackgroundFxModel = {
 type ParticlesProps = {
   fx: BackgroundFxModel;
   selectedDate?: Date;
+  planetLayoutMode?: "orbit" | "row";
   burstToken?: number;
   showPlanets?: boolean;
 };
@@ -60,6 +61,7 @@ type CosmicPlanetNode = {
 // Base multiplier for upward flow speed.
 const BACKGROUND_SPEED_MULTIPLIER = 0.28;
 const MIN_COLOR_SHARE = 0.11;
+const ORBIT_TRANSITION_DAMPING = 7.5;
 
 const PLANET_TEXTURES: Record<string, string> = {
   Сонце: "/textures/planets/sun.jpg",
@@ -238,9 +240,27 @@ function CosmicPlanet({
   texture: THREE.Texture | null;
   position: [number, number, number];
 }) {
+  const ref = useRef<THREE.Group | null>(null);
+  const initializedRef = useRef(false);
+  const target = useMemo(
+    () => new THREE.Vector3(position[0], position[1], position[2]),
+    [position],
+  );
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    if (!initializedRef.current) {
+      ref.current.position.copy(target);
+      initializedRef.current = true;
+      return;
+    }
+    const t = 1 - Math.exp(-ORBIT_TRANSITION_DAMPING * delta);
+    ref.current.position.lerp(target, t);
+  });
+
   return (
-    <group position={position}>
-      <mesh>
+    <group ref={ref}>
+      <mesh castShadow receiveShadow>
         <sphereGeometry args={[node.size, 36, 36]} />
         <meshStandardMaterial
           map={texture ?? undefined}
@@ -303,8 +323,8 @@ function OrbitOval({ radius, color }: { radius: number; color: string }) {
       points={points}
       color={color}
       transparent
-      opacity={0.16}
-      lineWidth={0.4}
+      opacity={0.05}
+      lineWidth={0.14}
     />
   );
 }
@@ -328,9 +348,35 @@ function EarthMoonSystem({
   moonColor: string;
   moonTexture: THREE.Texture | null;
 }) {
+  const earthRef = useRef<THREE.Group | null>(null);
+  const moonRef = useRef<THREE.Group | null>(null);
+  const initializedRef = useRef(false);
+  const earthTarget = useMemo(
+    () =>
+      new THREE.Vector3(earthPosition[0], earthPosition[1], earthPosition[2]),
+    [earthPosition],
+  );
+  const moonTarget = useMemo(
+    () => new THREE.Vector3(moonPosition[0], moonPosition[1], moonPosition[2]),
+    [moonPosition],
+  );
+
+  useFrame((_, delta) => {
+    if (!earthRef.current || !moonRef.current) return;
+    if (!initializedRef.current) {
+      earthRef.current.position.copy(earthTarget);
+      moonRef.current.position.copy(moonTarget);
+      initializedRef.current = true;
+      return;
+    }
+    const t = 1 - Math.exp(-ORBIT_TRANSITION_DAMPING * delta);
+    earthRef.current.position.lerp(earthTarget, t);
+    moonRef.current.position.lerp(moonTarget, t);
+  });
+
   return (
-    <group position={earthPosition}>
-      <mesh>
+    <group ref={earthRef}>
+      <mesh castShadow receiveShadow>
         <sphereGeometry args={[earthSize, 36, 36]} />
         <meshStandardMaterial
           map={earthTexture ?? undefined}
@@ -370,8 +416,8 @@ function EarthMoonSystem({
 
       <OrbitOval radius={moonOrbitRadius} color={moonColor} />
 
-      <group position={moonPosition}>
-        <mesh>
+      <group ref={moonRef}>
+        <mesh castShadow receiveShadow>
           <sphereGeometry args={[moonSize, 30, 30]} />
           <meshStandardMaterial
             map={moonTexture ?? undefined}
@@ -416,9 +462,11 @@ function EarthMoonSystem({
 function CosmicSkyScene({
   planets,
   selectedDate,
+  layoutMode,
 }: {
   planets: CosmicPlanetNode[];
   selectedDate: Date;
+  layoutMode: "orbit" | "row";
 }) {
   const coreSunTexture = useLoader(THREE.TextureLoader, PLANET_TEXTURES.Сонце);
   const coreEarthTexture = useLoader(
@@ -514,80 +562,173 @@ function CosmicSkyScene({
       ),
     [orbitingPlanets, selectedDate],
   );
+  const rowPlanets = useMemo(
+    () => [...planets].sort((a, b) => b.weight - a.weight),
+    [planets],
+  );
+  const rowPositions = useMemo<Record<string, [number, number, number]>>(() => {
+    if (rowPlanets.length === 0) return {};
+    const maxPlanetSize = Math.max(
+      0.25,
+      ...rowPlanets.map((planet) => planet.size),
+    );
+    const step = Math.max(4.4, maxPlanetSize * 4.2);
+    const half = (rowPlanets.length - 1) / 2;
+    return rowPlanets.reduce<Record<string, [number, number, number]>>(
+      (acc, planet, index) => {
+        acc[planet.id] = [(index - half) * step, 9.6, 0];
+        return acc;
+      },
+      {},
+    );
+  }, [rowPlanets]);
+  const rowCameraZ = useMemo(() => {
+    if (rowPlanets.length <= 1) return 24;
+    const maxPlanetSize = Math.max(
+      0.25,
+      ...rowPlanets.map((planet) => planet.size),
+    );
+    const step = Math.max(4.4, maxPlanetSize * 4.2);
+    const totalWidth = (rowPlanets.length - 1) * step + maxPlanetSize * 2.5;
+    return Math.max(19, totalWidth * 0.92);
+  }, [rowPlanets]);
+  const controlsRef = useRef<CameraControls | null>(null);
+
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    if (layoutMode === "row") {
+      controlsRef.current.setLookAt(0, 13.2, rowCameraZ, 0, 9.2, 0, true);
+      return;
+    }
+    controlsRef.current.setLookAt(0, 18, 35, 0, 0, 0, true);
+  }, [layoutMode, rowCameraZ, selectedDate]);
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <pointLight position={[0, 0, 0]} intensity={2.2} color="#ffe7a7" />
-      <pointLight position={[22, 14, 10]} intensity={0.75} color="#8dc6ff" />
-
-      <mesh>
-        <sphereGeometry args={[1.58, 40, 40]} />
-        <meshStandardMaterial
-          map={coreSunTexture}
-          color="#ffffff"
-          emissive="#ffc25c"
-          emissiveIntensity={0.24}
-          roughness={0.36}
-          metalness={0.02}
-        />
-      </mesh>
-      <Html
-        position={[0, 2.18, 0]}
-        center
-        transform
-        sprite
-        distanceFactor={14}
-        style={{ pointerEvents: "none" }}
-      >
-        <div
-          style={{
-            fontSize: "7px",
-            fontWeight: 400,
-            color: "rgba(244, 247, 255, 0.95)",
-            padding: "0px 5px",
-            borderRadius: "5px",
-            border: "0.5px solid rgba(255, 255, 255, 0.15)",
-            background: "rgba(0, 0, 0, 0.15)",
-            backdropFilter: "blur(2px)",
-            whiteSpace: "nowrap",
-            textShadow: "0 0 10px rgba(0, 0, 0, 0.55)",
-            letterSpacing: "0.2px",
-          }}
-        >
-          Сонце
-        </div>
-      </Html>
-
-      <OrbitOval radius={earthOrbitRadius} color="#8ebeff" />
-
-      <EarthMoonSystem
-        earthPosition={earthPosition}
-        earthSize={earthSize}
-        earthTexture={coreEarthTexture}
-        moonOrbitRadius={moonOrbitRadius}
-        moonPosition={moonPosition}
-        moonSize={moonSize}
-        moonColor={moonColor}
-        moonTexture={moonTexture}
+      <ambientLight intensity={0.22} />
+      <pointLight
+        position={[0, 0, 0]}
+        intensity={2.0}
+        color="#ffe7a7"
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-bias={-0.00035}
       />
+      <directionalLight
+        position={[9, 12, 8]}
+        intensity={0.95}
+        color="#f6f3ee"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={0.5}
+        shadow-camera-far={120}
+        shadow-camera-left={-40}
+        shadow-camera-right={40}
+        shadow-camera-top={40}
+        shadow-camera-bottom={-40}
+        shadow-bias={-0.00035}
+      />
+      <directionalLight
+        position={[-14, 6, -12]}
+        intensity={0.32}
+        color="#6cb5ff"
+      />
+      <pointLight position={[0, 7, -22]} intensity={0.4} color="#9dd8ff" />
 
-      {orbitingPlanets.map((planet) => (
-        <OrbitOval
-          key={`orbit-${planet.id}`}
-          radius={planet.orbitRadius}
-          color={planet.color}
-        />
-      ))}
+      {layoutMode === "orbit" && (
+        <mesh castShadow>
+          <sphereGeometry args={[1.58, 40, 40]} />
+          <meshStandardMaterial
+            map={coreSunTexture}
+            color="#ffffff"
+            emissive="#ffc25c"
+            emissiveIntensity={0.24}
+            roughness={0.36}
+            metalness={0.02}
+          />
+        </mesh>
+      )}
+      <mesh
+        receiveShadow
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -2.55, 0]}
+      >
+        <planeGeometry args={[130, 130]} />
+        <shadowMaterial opacity={0} transparent />
+      </mesh>
+      {layoutMode === "orbit" ? (
+        <>
+          <Html
+            position={[0, 2.18, 0]}
+            center
+            transform
+            sprite
+            distanceFactor={14}
+            style={{ pointerEvents: "none" }}
+          >
+            <div
+              style={{
+                fontSize: "7px",
+                fontWeight: 400,
+                color: "rgba(244, 247, 255, 0.95)",
+                padding: "0px 5px",
+                borderRadius: "5px",
+                border: "0.5px solid rgba(255, 255, 255, 0.15)",
+                background: "rgba(0, 0, 0, 0.15)",
+                backdropFilter: "blur(2px)",
+                whiteSpace: "nowrap",
+                textShadow: "0 0 10px rgba(0, 0, 0, 0.55)",
+                letterSpacing: "0.2px",
+              }}
+            >
+              Сонце
+            </div>
+          </Html>
 
-      {orbitingPlanets.map((planet) => (
-        <CosmicPlanet
-          key={planet.id}
-          node={planet}
-          texture={textureById[planet.id] ?? null}
-          position={planetPositions[planet.id] ?? [0, 0, 0]}
-        />
-      ))}
+          <OrbitOval radius={earthOrbitRadius} color="#8ebeff" />
+
+          <EarthMoonSystem
+            earthPosition={earthPosition}
+            earthSize={earthSize}
+            earthTexture={coreEarthTexture}
+            moonOrbitRadius={moonOrbitRadius}
+            moonPosition={moonPosition}
+            moonSize={moonSize}
+            moonColor={moonColor}
+            moonTexture={moonTexture}
+          />
+
+          {orbitingPlanets.map((planet) => (
+            <OrbitOval
+              key={`orbit-${planet.id}`}
+              radius={planet.orbitRadius}
+              color={planet.color}
+            />
+          ))}
+
+          {orbitingPlanets.map((planet) => (
+            <CosmicPlanet
+              key={planet.id}
+              node={planet}
+              texture={textureById[planet.id] ?? null}
+              position={planetPositions[planet.id] ?? [0, 0, 0]}
+            />
+          ))}
+        </>
+      ) : (
+        <>
+          {rowPlanets.map((planet) => (
+            <CosmicPlanet
+              key={planet.id}
+              node={planet}
+              texture={textureById[planet.id] ?? null}
+              position={rowPositions[planet.id] ?? [0, 0, 0]}
+            />
+          ))}
+        </>
+      )}
 
       <Stars
         radius={220}
@@ -601,7 +742,7 @@ function CosmicSkyScene({
 
       <EffectComposer multisampling={0}>
         <Bloom
-          intensity={0.08}
+          intensity={0.12}
           luminanceThreshold={0.9}
           luminanceSmoothing={0.9}
           mipmapBlur
@@ -609,9 +750,10 @@ function CosmicSkyScene({
         />
       </EffectComposer>
       <CameraControls
+        ref={controlsRef}
         makeDefault
         minDistance={10}
-        maxDistance={64}
+        maxDistance={90}
         truckSpeed={0}
         dollySpeed={0.45}
       />
@@ -622,6 +764,7 @@ function CosmicSkyScene({
 export function Particles({
   fx,
   selectedDate = new Date(),
+  planetLayoutMode = "orbit",
   burstToken = 0,
   showPlanets = true,
 }: ParticlesProps) {
@@ -1118,16 +1261,31 @@ export function Particles({
       />
 
       {showPlanets && (
-        <div className="pointer-events-auto absolute inset-0" style={{ zIndex: 3 }}>
+        <div
+          className="pointer-events-auto absolute inset-0"
+          style={{ zIndex: 3 }}
+        >
           <Canvas
-            camera={{ position: [0, 8, 26], fov: 46 }}
-            gl={{ alpha: true, antialias: true }}
+            camera={{ position: [0, 18, 35], fov: 46 }}
+            shadows
+            dpr={[1, 2]}
+            gl={{
+              alpha: true,
+              antialias: true,
+              powerPreference: "high-performance",
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 1.0,
+            }}
             onCreated={({ gl }) => {
               gl.setClearColor(new THREE.Color("#000000"), 0);
             }}
           >
             <Suspense fallback={null}>
-              <CosmicSkyScene planets={cosmicPlanets} selectedDate={selectedDate} />
+              <CosmicSkyScene
+                planets={cosmicPlanets}
+                selectedDate={selectedDate}
+                layoutMode={planetLayoutMode}
+              />
             </Suspense>
           </Canvas>
         </div>

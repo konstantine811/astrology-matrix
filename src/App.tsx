@@ -71,6 +71,7 @@ const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
 const MATRIX_CELL_OPACITY = 0.3;
 const BIRTH_DATE_STORAGE_KEY = "metasense-birth-date";
 type BackgroundMode = "planets" | "colors";
+type PlanetLayoutMode = "orbit" | "row";
 
 function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -133,6 +134,8 @@ function App() {
   const [activeMainTab, setActiveMainTab] = useState<MainTabKey>("matrix");
   const [backgroundMode, setBackgroundMode] =
     useState<BackgroundMode>("planets");
+  const [planetLayoutMode, setPlanetLayoutMode] =
+    useState<PlanetLayoutMode>("row");
   const [calculatorOnly, setCalculatorOnly] = useState(false);
   const fxProfile: FxProfileMode = "balanced";
   const [fxBurstToken, setFxBurstToken] = useState(0);
@@ -435,6 +438,7 @@ function App() {
       <Particles
         fx={backgroundFx}
         selectedDate={selectedDate}
+        planetLayoutMode={planetLayoutMode}
         burstToken={fxBurstToken}
         showPlanets={backgroundMode === "planets"}
       />
@@ -463,6 +467,29 @@ function App() {
             }
           >
             {backgroundMode === "planets" ? "🪐 Планети" : "🎨 Кольори"}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setPlanetLayoutMode((prev) =>
+                prev === "orbit" ? "row" : "orbit",
+              )
+            }
+            className="flex h-10 items-center justify-center rounded-full border px-3 text-xs font-semibold shadow-md backdrop-blur transition hover:scale-105"
+            style={{
+              borderColor: ui.border,
+              background: ui.overlayButton,
+              color: ui.text,
+              boxShadow: ui.shadowSoft,
+            }}
+            aria-label="Перемкнути розкладку планет"
+            title={
+              planetLayoutMode === "orbit"
+                ? "Зараз: орбіти"
+                : "Зараз: ряд"
+            }
+          >
+            {planetLayoutMode === "orbit" ? "🌀 Орбіти" : "📏 Ряд"}
           </button>
           <button
             type="button"
