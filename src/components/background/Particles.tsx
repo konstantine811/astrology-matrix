@@ -1,4 +1,4 @@
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { CameraControls, Html, Line, Stars } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -468,6 +468,7 @@ function CosmicSkyScene({
   selectedDate: Date;
   layoutMode: "orbit" | "row";
 }) {
+  const { size, camera } = useThree();
   const coreSunTexture = useLoader(THREE.TextureLoader, PLANET_TEXTURES.Сонце);
   const coreEarthTexture = useLoader(
     THREE.TextureLoader,
@@ -572,7 +573,7 @@ function CosmicSkyScene({
       0.25,
       ...rowPlanets.map((planet) => planet.size),
     );
-    const step = Math.max(4.4, maxPlanetSize * 4.2);
+    const step = Math.max(2.35, maxPlanetSize * 2.35);
     const half = (rowPlanets.length - 1) / 2;
     return rowPlanets.reduce<Record<string, [number, number, number]>>(
       (acc, planet, index) => {
@@ -588,16 +589,24 @@ function CosmicSkyScene({
       0.25,
       ...rowPlanets.map((planet) => planet.size),
     );
-    const step = Math.max(4.4, maxPlanetSize * 4.2);
+    const step = Math.max(2.35, maxPlanetSize * 2.35);
     const totalWidth = (rowPlanets.length - 1) * step + maxPlanetSize * 2.5;
-    return Math.max(19, totalWidth * 0.92);
-  }, [rowPlanets]);
+    const halfWidth = totalWidth * 0.5 + 1.2;
+    const aspect = Math.max(0.45, size.width / Math.max(1, size.height));
+    const vfovDeg =
+      camera instanceof THREE.PerspectiveCamera ? camera.fov : 46;
+    const vfovRad = (vfovDeg * Math.PI) / 180;
+    const horizontalTan = Math.tan(vfovRad / 2) * aspect;
+    const fitDistance =
+      halfWidth / Math.max(0.15, horizontalTan);
+    return Math.max(11.8, fitDistance + 1.4);
+  }, [camera, rowPlanets, size.height, size.width]);
   const controlsRef = useRef<CameraControls | null>(null);
 
   useEffect(() => {
     if (!controlsRef.current) return;
     if (layoutMode === "row") {
-      controlsRef.current.setLookAt(0, 13.2, rowCameraZ, 0, 9.2, 0, true);
+      controlsRef.current.setLookAt(0, 11.2, rowCameraZ, 0, 9.55, 0, true);
       return;
     }
     controlsRef.current.setLookAt(0, 18, 35, 0, 0, 0, true);
@@ -650,14 +659,6 @@ function CosmicSkyScene({
           />
         </mesh>
       )}
-      <mesh
-        receiveShadow
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -2.55, 0]}
-      >
-        <planeGeometry args={[130, 130]} />
-        <shadowMaterial opacity={0} transparent />
-      </mesh>
       {layoutMode === "orbit" ? (
         <>
           <Html
