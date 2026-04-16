@@ -30,6 +30,7 @@ type PlanetNode = PlanetLegendItem & {
 const PLANET_TEXTURES: Record<string, string> = {
   Сонце: "/textures/planets/sun.jpg",
   Місяць: "/textures/planets/moon.jpg",
+  Земля: "/textures/planets/earth.jpg",
   Меркурій: "/textures/planets/mercury.jpg",
   Венера: "/textures/planets/venus.jpg",
   Марс: "/textures/planets/mars.jpg",
@@ -84,7 +85,7 @@ function OrbitRing({ radius, color }: { radius: number; color: string }) {
   }, [radius]);
 
   return (
-    <Line points={points} color={color} transparent opacity={0.35} lineWidth={0.8} />
+    <Line points={points} color={color} transparent opacity={0.12} lineWidth={0.35} />
   );
 }
 
@@ -149,19 +150,24 @@ function Scene({ items }: { items: PlanetLegendItem[] }) {
   return (
     <>
       <ambientLight intensity={0.7} />
-      <pointLight position={[0, 0, 0]} intensity={2.2} color="#fff8d1" />
+      <pointLight position={[0, 0, 0]} intensity={1.45} color="#d8ecff" />
       <pointLight position={[12, 10, 6]} intensity={1} color="#9dd8ff" />
 
       <mesh>
         <sphereGeometry args={[1.4, 40, 40]} />
         <meshStandardMaterial
-          map={textures.Сонце ?? undefined}
-          color="#f9d66b"
-          emissive="#f4b63b"
-          emissiveIntensity={0.9}
-          roughness={0.3}
+          map={textures.Земля ?? undefined}
+          color="#8bb9ff"
+          emissive="#325c98"
+          emissiveIntensity={0.35}
+          roughness={0.45}
           metalness={0.1}
         />
+      </mesh>
+
+      <mesh>
+        <sphereGeometry args={[1.72, 36, 36]} />
+        <meshBasicMaterial color="#9dc5ff" transparent opacity={0.05} />
       </mesh>
 
       {nodes.map((node) => (
@@ -183,7 +189,7 @@ function SceneFallback() {
       <ambientLight intensity={0.5} />
       <mesh>
         <sphereGeometry args={[1.2, 24, 24]} />
-        <meshStandardMaterial color="#f9d66b" emissive="#f4b63b" emissiveIntensity={0.8} />
+        <meshStandardMaterial color="#8bb9ff" emissive="#325c98" emissiveIntensity={0.35} />
       </mesh>
       <Stars radius={60} depth={28} count={900} factor={1.8} fade speed={0.2} />
     </>
@@ -208,8 +214,8 @@ export function MatrixCosmogram3D({ ui, items }: MatrixCosmogram3DProps) {
           3D КОСМОГРАМА МАТРИЦІ
         </p>
         <p className="mt-1 text-sm" style={{ color: ui.textMuted }}>
-          Символічна 3D-візуалізація: положення планет, розміри та швидкість орбіт
-          залежать від поточних ваг енергій вашої матриці.
+          Символічна 3D-візуалізація: чим ближче планета до Землі, тим сильніший
+          її поточний вплив; швидкість і розмір залежать від ваг енергій матриці.
         </p>
       </div>
 

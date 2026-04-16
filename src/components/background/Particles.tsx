@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Html, Stars } from "@react-three/drei";
+import { Html, Line, Stars } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -62,6 +62,7 @@ const MIN_COLOR_SHARE = 0.11;
 
 const PLANET_TEXTURES: Record<string, string> = {
   Сонце: "/textures/planets/sun.jpg",
+  Земля: "/textures/planets/earth.jpg",
   Місяць: "/textures/planets/moon.jpg",
   Меркурій: "/textures/planets/mercury.jpg",
   Венера: "/textures/planets/venus.jpg",
@@ -275,8 +276,175 @@ function CosmicPlanet({
   );
 }
 
+function OrbitOval({ radius, color }: { radius: number; color: string }) {
+  const points = useMemo(() => {
+    const curve = new THREE.EllipseCurve(
+      0,
+      0,
+      radius,
+      radius * 0.66,
+      0,
+      Math.PI * 2,
+      false,
+      0,
+    );
+    return curve
+      .getPoints(128)
+      .map((p) => [p.x, 0, p.y] as [number, number, number]);
+  }, [radius]);
+
+  return (
+    <Line
+      points={points}
+      color={color}
+      transparent
+      opacity={0.16}
+      lineWidth={0.4}
+    />
+  );
+}
+
+function EarthMoonSystem({
+  earthOrbitRadius,
+  earthSpeed,
+  earthPhase,
+  earthSize,
+  earthTexture,
+  moonOrbitRadius,
+  moonSpeed,
+  moonPhase,
+  moonSize,
+  moonColor,
+  moonTexture,
+}: {
+  earthOrbitRadius: number;
+  earthSpeed: number;
+  earthPhase: number;
+  earthSize: number;
+  earthTexture: THREE.Texture | null;
+  moonOrbitRadius: number;
+  moonSpeed: number;
+  moonPhase: number;
+  moonSize: number;
+  moonColor: string;
+  moonTexture: THREE.Texture | null;
+}) {
+  const earthRef = useRef<THREE.Group | null>(null);
+  const moonRef = useRef<THREE.Group | null>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const earthAngle = t * earthSpeed + earthPhase;
+    const ex = Math.cos(earthAngle) * earthOrbitRadius;
+    const ez = Math.sin(earthAngle) * earthOrbitRadius * 0.66;
+
+    if (earthRef.current) {
+      earthRef.current.position.set(ex, 0, ez);
+      earthRef.current.rotation.y += 0.004;
+    }
+
+    const moonAngle = t * moonSpeed + moonPhase;
+    const mx = Math.cos(moonAngle) * moonOrbitRadius;
+    const mz = Math.sin(moonAngle) * moonOrbitRadius * 0.66;
+    const my = Math.sin(moonAngle * 0.5) * 0.08;
+
+    if (moonRef.current) {
+      moonRef.current.position.set(mx, my, mz);
+      moonRef.current.rotation.y += 0.006;
+    }
+  });
+
+  return (
+    <group ref={earthRef}>
+      <mesh>
+        <sphereGeometry args={[earthSize, 36, 36]} />
+        <meshStandardMaterial
+          map={earthTexture ?? undefined}
+          color={earthTexture ? "#ffffff" : "#8ebeff"}
+          emissive={earthTexture ? "#000000" : "#35649c"}
+          emissiveIntensity={earthTexture ? 0 : 0.12}
+          roughness={0.44}
+          metalness={0.03}
+        />
+      </mesh>
+      <Html
+        position={[0, earthSize + 0.4, 0]}
+        center
+        transform
+        sprite
+        distanceFactor={14}
+        style={{ pointerEvents: "none" }}
+      >
+        <div
+          style={{
+            fontSize: "7px",
+            fontWeight: 400,
+            color: "rgba(244, 247, 255, 0.95)",
+            padding: "0px 5px",
+            borderRadius: "5px",
+            border: "0.5px solid rgba(255, 255, 255, 0.15)",
+            background: "rgba(0, 0, 0, 0.15)",
+            backdropFilter: "blur(2px)",
+            whiteSpace: "nowrap",
+            textShadow: "0 0 10px rgba(0, 0, 0, 0.55)",
+            letterSpacing: "0.2px",
+          }}
+        >
+          Земля
+        </div>
+      </Html>
+
+      <OrbitOval radius={moonOrbitRadius} color={moonColor} />
+
+      <group ref={moonRef}>
+        <mesh>
+          <sphereGeometry args={[moonSize, 30, 30]} />
+          <meshStandardMaterial
+            map={moonTexture ?? undefined}
+            color={moonTexture ? "#ffffff" : moonColor}
+            emissive={moonTexture ? "#000000" : moonColor}
+            emissiveIntensity={moonTexture ? 0 : 0.1}
+            roughness={0.76}
+            metalness={0.02}
+          />
+        </mesh>
+        <Html
+          position={[0, moonSize + 0.28, 0]}
+          center
+          transform
+          sprite
+          distanceFactor={14}
+          style={{ pointerEvents: "none" }}
+        >
+          <div
+            style={{
+              fontSize: "6px",
+              fontWeight: 400,
+              color: "rgba(244, 247, 255, 0.95)",
+              padding: "0px 4px",
+              borderRadius: "5px",
+              border: "0.5px solid rgba(255, 255, 255, 0.15)",
+              background: "rgba(0, 0, 0, 0.15)",
+              backdropFilter: "blur(2px)",
+              whiteSpace: "nowrap",
+              textShadow: "0 0 10px rgba(0, 0, 0, 0.55)",
+              letterSpacing: "0.2px",
+            }}
+          >
+            Місяць
+          </div>
+        </Html>
+      </group>
+    </group>
+  );
+}
+
 function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
   const coreSunTexture = useLoader(THREE.TextureLoader, PLANET_TEXTURES.Сонце);
+  const coreEarthTexture = useLoader(
+    THREE.TextureLoader,
+    PLANET_TEXTURES.Земля,
+  );
   const textureUrls = useMemo(
     () => planets.map((planet) => planet.texturePath),
     [planets],
@@ -286,7 +454,9 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
   useEffect(() => {
     coreSunTexture.colorSpace = THREE.SRGBColorSpace;
     coreSunTexture.anisotropy = 4;
-  }, [coreSunTexture]);
+    coreEarthTexture.colorSpace = THREE.SRGBColorSpace;
+    coreEarthTexture.anisotropy = 4;
+  }, [coreSunTexture, coreEarthTexture]);
   const textureById = useMemo(() => {
     const map: Record<string, THREE.Texture | null> = {};
     planets.forEach((planet, index) => {
@@ -300,26 +470,112 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
     return map;
   }, [loadedTextures, planets]);
 
+  const sunNode = useMemo(
+    () => planets.find((planet) => planet.planet === "Сонце") ?? null,
+    [planets],
+  );
+  const moonNode = useMemo(
+    () => planets.find((planet) => planet.planet === "Місяць") ?? null,
+    [planets],
+  );
+  const orbitingPlanets = useMemo(
+    () =>
+      planets
+        .filter(
+          (planet) =>
+            planet.planet !== "Сонце" &&
+            planet.planet !== "Місяць" &&
+            planet.planet !== "Земля",
+        )
+        .sort((a, b) => b.weight - a.weight)
+        .map((planet, index) => ({
+          ...planet,
+          orbitRadius: 10 + index * 2.35,
+        })),
+    [planets],
+  );
+
+  const earthOrbitRadius = 7.1;
+  const earthSize = 0.88 + Math.min(0.22, (sunNode?.share ?? 0.1) * 0.7);
+  const earthSpeed = 0.07;
+  const earthPhase = seeded("earth-system-phase") * Math.PI * 2;
+  const moonOrbitRadius = 2.05;
+  const moonSize = moonNode?.size ?? 0.27;
+  const moonSpeed = 0.72 + (moonNode?.share ?? 0.05) * 0.7;
+  const moonPhase =
+    moonNode?.phase ?? seeded("moon-system-phase") * Math.PI * 2;
+  const moonColor = moonNode?.color ?? "#b8bfd6";
+  const moonTexture = moonNode ? (textureById[moonNode.id] ?? null) : null;
+
   return (
     <>
       <ambientLight intensity={0.4} />
-      <pointLight position={[0, 0, 0]} intensity={2.6} color="#fff4d0" />
+      <pointLight position={[0, 0, 0]} intensity={2.2} color="#ffe7a7" />
       <pointLight position={[22, 14, 10]} intensity={0.75} color="#8dc6ff" />
 
       <mesh>
-        <sphereGeometry args={[1.5, 40, 40]} />
+        <sphereGeometry args={[1.58, 40, 40]} />
         <meshStandardMaterial
           map={coreSunTexture}
           color="#ffffff"
           emissive="#ffc25c"
-          emissiveIntensity={1.8}
-          roughness={0.38}
+          emissiveIntensity={0.24}
+          roughness={0.36}
           metalness={0.02}
-          toneMapped={false}
         />
       </mesh>
+      <Html
+        position={[0, 2.18, 0]}
+        center
+        transform
+        sprite
+        distanceFactor={14}
+        style={{ pointerEvents: "none" }}
+      >
+        <div
+          style={{
+            fontSize: "7px",
+            fontWeight: 400,
+            color: "rgba(244, 247, 255, 0.95)",
+            padding: "0px 5px",
+            borderRadius: "5px",
+            border: "0.5px solid rgba(255, 255, 255, 0.15)",
+            background: "rgba(0, 0, 0, 0.15)",
+            backdropFilter: "blur(2px)",
+            whiteSpace: "nowrap",
+            textShadow: "0 0 10px rgba(0, 0, 0, 0.55)",
+            letterSpacing: "0.2px",
+          }}
+        >
+          Сонце
+        </div>
+      </Html>
 
-      {planets.map((planet) => (
+      <OrbitOval radius={earthOrbitRadius} color="#8ebeff" />
+
+      <EarthMoonSystem
+        earthOrbitRadius={earthOrbitRadius}
+        earthSpeed={earthSpeed}
+        earthPhase={earthPhase}
+        earthSize={earthSize}
+        earthTexture={coreEarthTexture}
+        moonOrbitRadius={moonOrbitRadius}
+        moonSpeed={moonSpeed}
+        moonPhase={moonPhase}
+        moonSize={moonSize}
+        moonColor={moonColor}
+        moonTexture={moonTexture}
+      />
+
+      {orbitingPlanets.map((planet) => (
+        <OrbitOval
+          key={`orbit-${planet.id}`}
+          radius={planet.orbitRadius}
+          color={planet.color}
+        />
+      ))}
+
+      {orbitingPlanets.map((planet) => (
         <CosmicPlanet
           key={planet.id}
           node={planet}
@@ -339,11 +595,11 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
 
       <EffectComposer multisampling={0}>
         <Bloom
-          intensity={2.62}
+          intensity={0.08}
           luminanceThreshold={0.9}
-          luminanceSmoothing={1.02}
+          luminanceSmoothing={0.9}
           mipmapBlur
-          radius={0.42}
+          radius={0.24}
         />
       </EffectComposer>
     </>
@@ -710,7 +966,6 @@ export function Particles({
 
     fx.layers.forEach((layer) => {
       if (!layer.planet) return;
-      if (layer.planet === "Сонце") return;
       const current = byPlanet.get(layer.planet) ?? {
         color: layer.color,
         weight: 0,
@@ -727,6 +982,7 @@ export function Particles({
     );
 
     return list
+      .sort((a, b) => b[1].weight - a[1].weight)
       .map(([planet, item], index) => {
         const share = item.weight / totalWeight;
         const baseSize = PLANET_BASE_SIZES[planet] ?? 0.9;
