@@ -1,5 +1,5 @@
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Html, Line, Stars } from "@react-three/drei";
+import { Canvas, useLoader } from "@react-three/fiber";
+import { CameraControls, Html, Line, Stars } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -39,6 +39,7 @@ type BackgroundFxModel = {
 
 type ParticlesProps = {
   fx: BackgroundFxModel;
+  selectedDate: Date;
   burstToken?: number;
   showPlanets?: boolean;
 };
@@ -203,6 +204,20 @@ function seeded(value: string | number): number {
   return Math.abs(Math.sin(hash * 12.9898) * 43758.5453) % 1;
 }
 
+function getDateBasedAngle(date: Date, key: string): number {
+  const y = date.getFullYear();
+  const m = date.getMonth();
+  const d = date.getDate();
+  const utcStart = Date.UTC(y, 0, 1);
+  const utcNow = Date.UTC(y, m, d);
+  const dayOfYear = Math.max(1, Math.floor((utcNow - utcStart) / 86400000) + 1);
+  const yearShare = (y % 29) / 29;
+  const dayShare = dayOfYear / 365.2422;
+  const keyShift = seeded(`angle-${key}`) * 0.37;
+  const normalized = (dayShare + yearShare + keyShift) % 1;
+  return normalized * Math.PI * 2;
+}
+
 function computeUpwardOffset(
   t: number,
   seed: number,
@@ -216,25 +231,14 @@ function computeUpwardOffset(
 function CosmicPlanet({
   node,
   texture,
+  position,
 }: {
   node: CosmicPlanetNode;
   texture: THREE.Texture | null;
+  position: [number, number, number];
 }) {
-  const ref = useRef<THREE.Group | null>(null);
-
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const t = clock.getElapsedTime();
-    const a = t * node.speed + node.phase;
-    const x = Math.cos(a) * node.orbitRadius;
-    const z = Math.sin(a) * node.orbitRadius * 0.66;
-    const y = Math.sin(a * 0.45) * 0.25;
-    ref.current.position.set(x, y, z);
-    ref.current.rotation.y += 0.0035;
-  });
-
   return (
-    <group ref={ref}>
+    <group position={position}>
       <mesh>
         <sphereGeometry args={[node.size, 36, 36]} />
         <meshStandardMaterial
@@ -305,57 +309,26 @@ function OrbitOval({ radius, color }: { radius: number; color: string }) {
 }
 
 function EarthMoonSystem({
-  earthOrbitRadius,
-  earthSpeed,
-  earthPhase,
+  earthPosition,
   earthSize,
   earthTexture,
   moonOrbitRadius,
-  moonSpeed,
-  moonPhase,
+  moonPosition,
   moonSize,
   moonColor,
   moonTexture,
 }: {
-  earthOrbitRadius: number;
-  earthSpeed: number;
-  earthPhase: number;
+  earthPosition: [number, number, number];
   earthSize: number;
   earthTexture: THREE.Texture | null;
   moonOrbitRadius: number;
-  moonSpeed: number;
-  moonPhase: number;
+  moonPosition: [number, number, number];
   moonSize: number;
   moonColor: string;
   moonTexture: THREE.Texture | null;
 }) {
-  const earthRef = useRef<THREE.Group | null>(null);
-  const moonRef = useRef<THREE.Group | null>(null);
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    const earthAngle = t * earthSpeed + earthPhase;
-    const ex = Math.cos(earthAngle) * earthOrbitRadius;
-    const ez = Math.sin(earthAngle) * earthOrbitRadius * 0.66;
-
-    if (earthRef.current) {
-      earthRef.current.position.set(ex, 0, ez);
-      earthRef.current.rotation.y += 0.004;
-    }
-
-    const moonAngle = t * moonSpeed + moonPhase;
-    const mx = Math.cos(moonAngle) * moonOrbitRadius;
-    const mz = Math.sin(moonAngle) * moonOrbitRadius * 0.66;
-    const my = Math.sin(moonAngle * 0.5) * 0.08;
-
-    if (moonRef.current) {
-      moonRef.current.position.set(mx, my, mz);
-      moonRef.current.rotation.y += 0.006;
-    }
-  });
-
   return (
-    <group ref={earthRef}>
+    <group position={earthPosition}>
       <mesh>
         <sphereGeometry args={[earthSize, 36, 36]} />
         <meshStandardMaterial
@@ -396,7 +369,7 @@ function EarthMoonSystem({
 
       <OrbitOval radius={moonOrbitRadius} color={moonColor} />
 
-      <group ref={moonRef}>
+      <group position={moonPosition}>
         <mesh>
           <sphereGeometry args={[moonSize, 30, 30]} />
           <meshStandardMaterial
@@ -439,7 +412,13 @@ function EarthMoonSystem({
   );
 }
 
-function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
+function CosmicSkyScene({
+  planets,
+  selectedDate,
+}: {
+  planets: CosmicPlanetNode[];
+  selectedDate: Date;
+}) {
   const coreSunTexture = useLoader(THREE.TextureLoader, PLANET_TEXTURES.Сонце);
   const coreEarthTexture = useLoader(
     THREE.TextureLoader,
@@ -497,15 +476,43 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
 
   const earthOrbitRadius = 7.1;
   const earthSize = 0.88 + Math.min(0.22, (sunNode?.share ?? 0.1) * 0.7);
-  const earthSpeed = 0.07;
-  const earthPhase = seeded("earth-system-phase") * Math.PI * 2;
   const moonOrbitRadius = 2.05;
   const moonSize = moonNode?.size ?? 0.27;
-  const moonSpeed = 0.72 + (moonNode?.share ?? 0.05) * 0.7;
-  const moonPhase =
-    moonNode?.phase ?? seeded("moon-system-phase") * Math.PI * 2;
   const moonColor = moonNode?.color ?? "#b8bfd6";
   const moonTexture = moonNode ? (textureById[moonNode.id] ?? null) : null;
+
+  const earthAngle = useMemo(
+    () => getDateBasedAngle(selectedDate, "Земля"),
+    [selectedDate],
+  );
+  const earthPosition = useMemo<[number, number, number]>(() => {
+    const x = Math.cos(earthAngle) * earthOrbitRadius;
+    const z = Math.sin(earthAngle) * earthOrbitRadius * 0.66;
+    return [x, 0, z];
+  }, [earthAngle, earthOrbitRadius]);
+  const moonPosition = useMemo<[number, number, number]>(() => {
+    const moonAngle =
+      getDateBasedAngle(selectedDate, "Місяць") + earthAngle * 0.2;
+    const x = Math.cos(moonAngle) * moonOrbitRadius;
+    const z = Math.sin(moonAngle) * moonOrbitRadius * 0.66;
+    const y = Math.sin(moonAngle * 0.5) * 0.08;
+    return [x, y, z];
+  }, [selectedDate, earthAngle, moonOrbitRadius]);
+  const planetPositions = useMemo<Record<string, [number, number, number]>>(
+    () =>
+      orbitingPlanets.reduce<Record<string, [number, number, number]>>(
+        (acc, planet) => {
+          const angle = getDateBasedAngle(selectedDate, planet.planet);
+          const x = Math.cos(angle) * planet.orbitRadius;
+          const z = Math.sin(angle) * planet.orbitRadius * 0.66;
+          const y = Math.sin(angle * 0.45) * 0.25;
+          acc[planet.id] = [x, y, z];
+          return acc;
+        },
+        {},
+      ),
+    [orbitingPlanets, selectedDate],
+  );
 
   return (
     <>
@@ -554,14 +561,11 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
       <OrbitOval radius={earthOrbitRadius} color="#8ebeff" />
 
       <EarthMoonSystem
-        earthOrbitRadius={earthOrbitRadius}
-        earthSpeed={earthSpeed}
-        earthPhase={earthPhase}
+        earthPosition={earthPosition}
         earthSize={earthSize}
         earthTexture={coreEarthTexture}
         moonOrbitRadius={moonOrbitRadius}
-        moonSpeed={moonSpeed}
-        moonPhase={moonPhase}
+        moonPosition={moonPosition}
         moonSize={moonSize}
         moonColor={moonColor}
         moonTexture={moonTexture}
@@ -580,6 +584,7 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
           key={planet.id}
           node={planet}
           texture={textureById[planet.id] ?? null}
+          position={planetPositions[planet.id] ?? [0, 0, 0]}
         />
       ))}
 
@@ -602,12 +607,20 @@ function CosmicSkyScene({ planets }: { planets: CosmicPlanetNode[] }) {
           radius={0.24}
         />
       </EffectComposer>
+      <CameraControls
+        makeDefault
+        minDistance={10}
+        maxDistance={64}
+        truckSpeed={0}
+        dollySpeed={0.45}
+      />
     </>
   );
 }
 
 export function Particles({
   fx,
+  selectedDate,
   burstToken = 0,
   showPlanets = true,
 }: ParticlesProps) {
@@ -1104,7 +1117,7 @@ export function Particles({
       />
 
       {showPlanets && (
-        <div className="absolute inset-0" style={{ zIndex: 3 }}>
+        <div className="pointer-events-auto absolute inset-0" style={{ zIndex: 3 }}>
           <Canvas
             camera={{ position: [0, 8, 26], fov: 46 }}
             gl={{ alpha: true, antialias: true }}
@@ -1113,7 +1126,7 @@ export function Particles({
             }}
           >
             <Suspense fallback={null}>
-              <CosmicSkyScene planets={cosmicPlanets} />
+              <CosmicSkyScene planets={cosmicPlanets} selectedDate={selectedDate} />
             </Suspense>
           </Canvas>
         </div>

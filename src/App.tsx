@@ -434,6 +434,7 @@ function App() {
     >
       <Particles
         fx={backgroundFx}
+        selectedDate={selectedDate}
         burstToken={fxBurstToken}
         showPlanets={backgroundMode === "planets"}
       />
