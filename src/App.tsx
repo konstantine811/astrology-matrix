@@ -582,8 +582,7 @@ function App() {
                 {modelTable.calcLine.calc1} {modelTable.calcLine.calc2}{" "}
                 {modelTable.calcLine.calc3} {modelTable.calcLine.calc4}{" "}
               </span>{" "}
-              ({modelTable.calcLine.calc5}
-              {modelTable.calcLine.calc6})
+              ({modelTable.calcLine.calc5} {modelTable.calcLine.calc6})
             </div>
             {!calculatorOnly && (
               <>
