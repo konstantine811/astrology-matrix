@@ -505,7 +505,7 @@ function App() {
           </button>
         </div>
 
-        <h1 className="mb-3 pt-3 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
+        <h1 className="mb-3 pt-10 md:pt-0 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
           <span
             style={{
               backgroundImage: `linear-gradient(to bottom, ${ui.headingFrom}, ${ui.headingTo})`,
