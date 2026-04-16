@@ -36,7 +36,7 @@ export function BirthDatePicker({
   onDateSelect,
   theme = "dark",
 }: BirthDatePickerProps) {
-  const ui = getUITheme(theme, 0.5);
+  const ui = getUITheme(theme, 0.1);
   const [pickerMonth, setPickerMonth] = useState<Date>(selectedDate);
   const yearNumbers = years
     .map((y) => Number.parseInt(y, 10))
@@ -140,9 +140,7 @@ export function BirthDatePicker({
                 }}
                 className="matrix-day-picker"
               />
-              <Popover.Arrow
-                style={{ fill: ui.surfaceDeep }}
-              />
+              <Popover.Arrow style={{ fill: ui.surfaceDeep }} />
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>

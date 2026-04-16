@@ -68,7 +68,7 @@ const PROFILE_MULTIPLIERS: Record<FxProfileMode, number> = {
   balanced: 1,
   intense: 1.3,
 };
-const MATRIX_CELL_OPACITY = 0.5;
+const MATRIX_CELL_OPACITY = 0.3;
 const BIRTH_DATE_STORAGE_KEY = "metasense-birth-date";
 type BackgroundMode = "planets" | "colors";
 

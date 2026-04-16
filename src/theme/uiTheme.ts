@@ -18,8 +18,7 @@ type ThemePreset = {
   ring: [number, number, number];
 };
 
-const SHARED_PAGE_BACKGROUND =
-  "transparent";
+const SHARED_PAGE_BACKGROUND = "transparent";
 
 const PRESETS: Record<ThemeMode, ThemePreset> = {
   light: {
@@ -76,14 +75,14 @@ export function getUITheme(theme: ThemeMode, opacity = 0.5) {
     headingFrom: p.headingFrom,
     headingTo: p.headingTo,
     pageBackground: p.pageBackground,
-    border: rgba(p.border, 0.24 + o * 0.36),
-    borderStrong: rgba(p.border, 0.32 + o * 0.44),
-    ring: rgba(p.ring, theme === "dark" ? 0.34 : 0.26),
+    border: rgba(p.border, 0.04 + o * 0.06),
+    borderStrong: rgba(p.border, 0.02 + o * 0.04),
+    ring: rgba(p.ring, theme === "dark" ? 0.04 : 0.06),
     surface: rgba(p.surface, o),
     surfaceAlt: rgba(p.surfaceAlt, o),
     surfaceDeep: rgba(p.surfaceDeep, o),
-    surfaceSoft: rgba(p.surface, Math.max(0.1, o * 0.52)),
-    overlayButton: rgba(p.overlayButton, 0.35 + (1 - o) * 0.1),
+    surfaceSoft: rgba(p.surface, Math.max(0.1, o * 0.02)),
+    overlayButton: rgba(p.overlayButton, 0.05 + (1 - o) * 0.1),
     shadowSoft:
       theme === "dark"
         ? "0 10px 30px -16px rgba(0,0,0,0.86)"

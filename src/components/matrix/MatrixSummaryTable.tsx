@@ -261,7 +261,7 @@ function getCellTheme(
 export const MatrixSummaryTable = memo(function MatrixSummaryTable({
   rows,
   theme = "dark",
-  cellOpacity = 50,
+  cellOpacity = 10,
 }: MatrixSummaryTableProps) {
   const ui = getUITheme(theme, cellOpacity / 100);
   const tableSurface = ui.surface;
