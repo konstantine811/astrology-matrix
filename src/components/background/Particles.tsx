@@ -39,7 +39,7 @@ type BackgroundFxModel = {
 
 type ParticlesProps = {
   fx: BackgroundFxModel;
-  selectedDate: Date;
+  selectedDate?: Date;
   burstToken?: number;
   showPlanets?: boolean;
 };
@@ -204,10 +204,11 @@ function seeded(value: string | number): number {
   return Math.abs(Math.sin(hash * 12.9898) * 43758.5453) % 1;
 }
 
-function getDateBasedAngle(date: Date, key: string): number {
-  const y = date.getFullYear();
-  const m = date.getMonth();
-  const d = date.getDate();
+function getDateBasedAngle(date: Date | undefined, key: string): number {
+  const safeDate = date ?? new Date();
+  const y = safeDate.getFullYear();
+  const m = safeDate.getMonth();
+  const d = safeDate.getDate();
   const utcStart = Date.UTC(y, 0, 1);
   const utcNow = Date.UTC(y, m, d);
   const dayOfYear = Math.max(1, Math.floor((utcNow - utcStart) / 86400000) + 1);
@@ -620,7 +621,7 @@ function CosmicSkyScene({
 
 export function Particles({
   fx,
-  selectedDate,
+  selectedDate = new Date(),
   burstToken = 0,
   showPlanets = true,
 }: ParticlesProps) {
