@@ -25,10 +25,7 @@ import {
   createDayOptions,
   createYearOptions,
 } from "./constants/date";
-import {
-  ENERGY_NORM_COUNT,
-  ENERGY_PROFILES,
-} from "./data/energyNorms";
+import { ENERGY_NORM_COUNT, ENERGY_PROFILES } from "./data/energyNorms";
 import { buildMatrixModelTable, parseMatrixCell } from "./utils/modelTable";
 import { usePotentialItems } from "./hooks/usePotentialItems";
 import { useDailyInsights } from "./hooks/useDailyInsights";
@@ -128,11 +125,14 @@ function App() {
     }
   }, [defaultYearIndex, years]);
 
-  const [monthIndex, setMonthIndex] = useState(initialBirthSelection.monthIndex);
+  const [monthIndex, setMonthIndex] = useState(
+    initialBirthSelection.monthIndex,
+  );
   const [yearIndex, setYearIndex] = useState(initialBirthSelection.yearIndex);
   const [dayIndex, setDayIndex] = useState(initialBirthSelection.dayIndex);
   const [activeMainTab, setActiveMainTab] = useState<MainTabKey>("matrix");
-  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>("planets");
+  const [backgroundMode, setBackgroundMode] =
+    useState<BackgroundMode>("planets");
   const [calculatorOnly, setCalculatorOnly] = useState(false);
   const fxProfile: FxProfileMode = "balanced";
   const [fxBurstToken, setFxBurstToken] = useState(0);
@@ -505,7 +505,7 @@ function App() {
           </button>
         </div>
 
-        <h1 className="mb-3 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
+        <h1 className="mb-3 pt-3 bg-clip-text text-center text-2xl font-semibold tracking-tight text-transparent sm:text-3xl">
           <span
             style={{
               backgroundImage: `linear-gradient(to bottom, ${ui.headingFrom}, ${ui.headingTo})`,
@@ -541,7 +541,9 @@ function App() {
             <div
               className="max-w-sm w-full flex justify-center items-center rounded-2xl backdrop-blur-md"
               style={{
-                background: calculatorOnly ? "rgba(12, 20, 36, 0.28)" : ui.surfaceSoft,
+                background: calculatorOnly
+                  ? "rgba(12, 20, 36, 0.28)"
+                  : ui.surfaceSoft,
                 border: `1px solid ${ui.border}`,
                 boxShadow: calculatorOnly ? "none" : ui.shadowSoft,
               }}
@@ -565,7 +567,9 @@ function App() {
               className="mt-2 mb-2 flex flex-row items-center justify-center gap-4 rounded-2xl px-4 text-center text-lg font-semibold tracking-wide backdrop-blur-md sm:text-2xl"
               style={{
                 color: ui.text,
-                background: calculatorOnly ? "rgba(12, 20, 36, 0.3)" : ui.surfaceSoft,
+                background: calculatorOnly
+                  ? "rgba(12, 20, 36, 0.3)"
+                  : ui.surfaceSoft,
                 border: `1px solid ${ui.border}`,
                 boxShadow: calculatorOnly ? "none" : ui.shadowSoft,
               }}
