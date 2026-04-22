@@ -20,6 +20,7 @@ import {
   parseMatrixCell,
   type MatrixModelTableRow,
 } from "../../utils/modelTable";
+import { MATRIX_INTERPRETATIONS } from "../../data/matrixInterpretations";
 import { getUITheme, type ThemeMode } from "../../theme/uiTheme";
 import { PLANET_COLORS_BY_NAME } from "../../theme/planetColors";
 
@@ -240,6 +241,38 @@ const PLANET_SYMBOLS: Record<string, string> = {
   Вулкан: "🜂",
 };
 
+const TOP_ROW_DESCRIPTIONS: Record<
+  0 | 1 | 2,
+  { title: string; description: string }
+> = {
+  0: {
+    title: "Шлях особистості",
+    description: "Легкий шлях, шлях найменшого опору.",
+  },
+  1: {
+    title: "Минулий досвід",
+    description:
+      "Кількість циклів у надсистемі. Архетип накопичення досвіду, готовність використати попередні накопичення.",
+  },
+  2: {
+    title: "Шлях душі",
+    description:
+      "Шлях найбільшого опору, якісного накопичення досвіду.",
+  },
+};
+
+const TOP_ROW_NUMBER_OVERRIDES: Record<0 | 1 | 2, Record<number, string>> = {
+  0: {
+    10: "Воля в досягненні результату, вплив на великі маси людей, трансформація власної свідомості та свідомості людей.",
+  },
+  1: {
+    10: "Вище чуття, пізнання надсистеми, здатність прогнозувати.",
+  },
+  2: {
+    10: "Здатність бачити стратегію, розуміти перспективу, ставити ціль і бачити шлях її досягнення. Провідник Волі більшої системи.",
+  },
+};
+
 function getEnergyByCellPosition(
   rowIndex: number,
   colIndex: number,
@@ -441,18 +474,29 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
     const isTopBaseCell = parsed.rowIndex === 0 && parsed.colIndex <= 2;
 
     if (isTopBaseCell) {
+      const topRowContent = TOP_ROW_DESCRIPTIONS[parsed.colIndex as 0 | 1 | 2];
+      const meaning =
+        parsed.energy !== null ? MATRIX_INTERPRETATIONS[parsed.energy] : null;
+      const topRowMeaningOverride =
+        parsed.energy !== null
+          ? TOP_ROW_NUMBER_OVERRIDES[parsed.colIndex as 0 | 1 | 2]?.[
+              parsed.energy
+            ] ?? null
+          : null;
       const topBaseTitle =
-        parsed.colIndex === 0
+        topRowContent?.title ??
+        (parsed.colIndex === 0
           ? "Шлях найменшого опору"
           : parsed.colIndex === 2
             ? "Верхній правий показник"
-            : "Архетип старту розвитку (0)";
+            : "Архетип старту розвитку (0)");
       const topBaseText =
-        parsed.colIndex === 0
+        topRowContent?.description ??
+        (parsed.colIndex === 0
           ? "Це якісний базовий показник: те, що дається природно і легше за інше. Для цієї клітинки не застосовуються статуси «вище норми / нижче норми»."
           : parsed.colIndex === 2
             ? "Це окремий базовий показник верхнього правого кута. Він інтерпретується як якість (напрям), а не як кількісна «норма», тому статуси «вище / нижче норми» тут не використовуються."
-            : "Нуль у центрі верхнього ряду показує минулий досвід у циклі над системою: архетип, з якого суб'єкт починає розвиток, і готовність використати попередні накопичення.";
+            : "Нуль у центрі верхнього ряду показує минулий досвід у циклі над системою: архетип, з якого суб'єкт починає розвиток, і готовність використати попередні накопичення.");
       const zeroStateText =
         parsed.colIndex !== 1
           ? null
@@ -483,6 +527,13 @@ export const MatrixSummaryTable = memo(function MatrixSummaryTable({
           <p className="mt-1 text-sm" style={{ color: tableTextMuted }}>
             {topBaseText}
           </p>
+          {meaning && (
+            <p className="mt-1 text-sm" style={{ color: tableText }}>
+              Значення числа: <span className="font-semibold">{meaning.title}</span>
+              {" — "}
+              {topRowMeaningOverride ?? meaning.summary}
+            </p>
+          )}
           {zeroStateText && (
             <p className="mt-1 text-sm font-medium text-emerald-600">
               {zeroStateText}
